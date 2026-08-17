@@ -1,0 +1,44 @@
+[project]
+name = "flowsense"
+version = "0.1.0"
+description = "Temporal drift and anomaly detection for Apache Airflow"
+requires-python = ">=3.12"
+
+dependencies = [
+    "httpx>=0.27",
+    "pydantic>=2.8",
+    "numpy>=2.0",
+    "pandas>=2.2",
+    "scipy>=1.14",
+    "typer>=0.12",
+    "rich>=13.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+mcp = [
+    "mcp",
+]
+
+[project.scripts]
+flowsense = "flowsense.cli.main:app"
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+markers = [
+    "integration: tests that require a running Airflow instance",
+]
