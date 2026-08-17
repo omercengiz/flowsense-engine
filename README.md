@@ -85,7 +85,7 @@ Clone the repository:
 
 ```bash
 git clone <repository-url>
-cd airflow-flowsense
+cd flowsense-engine
 ```
 
 Create a virtual environment and install the project:
