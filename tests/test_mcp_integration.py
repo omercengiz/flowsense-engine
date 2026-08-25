@@ -1,4 +1,5 @@
 import os
+import sys
 
 import pytest
 from mcp import ClientSession, StdioServerParameters
@@ -28,10 +29,8 @@ async def test_mcp_analyze_airflow_dag_end_to_end() -> None:
         env["PYTHONPATH"] = "src"
 
     server_params = StdioServerParameters(
-        command="uv",
+        command=sys.executable,
         args=[
-            "run",
-            "python",
             "-m",
             "flowsense.mcp.server",
         ],
