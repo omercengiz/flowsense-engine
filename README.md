@@ -26,8 +26,12 @@ FlowSense is designed to answer questions such as:
 - Median-based historical baselines
 - MAD-based robust Z-score drift detection
 - Severity classification
-- Dependency-aware propagation analysis
+- Task handoff delay analysis
+- Task impact classification (`OWN_DRIFT`, `INHERITED_DELAY`, and `COMBINED`)
+- Multi-hop and branching propagation analysis
+- Primary root-cause selection
 - CLI-based DAG analysis
+- MCP server integration
 
 ## Example
 
@@ -40,13 +44,19 @@ Example output:
 ```text
 FlowSense Analysis — flowsense_demo
 
-┏━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━┓
-┃ Task      ┃ Baseline ┃ Current ┃ Deviation ┃ Z-Score ┃ Severity ┃
-┡━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━┩
-│ extract   │ 1.56s    │ 1.61s   │ +3.4%     │ 0.17    │ NORMAL   │
-│ transform │ 3.34s    │ 9.61s   │ +187.6%   │ 7.61    │ CRITICAL │
-│ load      │ 1.40s    │ 2.11s   │ +50.2%    │ 3.17    │ MEDIUM   │
-└───────────┴──────────┴─────────┴───────────┴─────────┴──────────┘
+┏━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━┓
+┃ Task      ┃ Baseline ┃ Current ┃ Deviation ┃ Z-Score ┃ Severity ┃ Impact    ┃
+┡━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━┩
+│ extract   │ 1.56s    │ 1.61s   │ +3.4%     │ 0.17    │ NORMAL   │ NORMAL    │
+│ transform │ 3.34s    │ 9.61s   │ +187.6%   │ 7.61    │ CRITICAL │ OWN_DRIFT │
+│ load      │ 1.40s    │ 2.11s   │ +50.2%    │ 3.17    │ MEDIUM   │ COMBINED  │
+└───────────┴──────────┴─────────┴───────────┴─────────┴──────────┴───────────┘
+
+Overall Severity: CRITICAL
+Primary Origin: transform
+Reason: OWN_DRIFT
+Severity: CRITICAL
+Propagation Score: 0.33
 
 Propagation Analysis
 
@@ -64,17 +74,16 @@ Apache Airflow
   Collector
       │
       ▼
-Task Run History
+Task Run and Handoff History
       │
       ▼
- Drift Engine
+Drift and Impact Analysis
       │
       ▼
-Propagation Analysis
+Propagation and Root-Cause Analysis
       │
       ├── CLI
-      │
-      └── MCP Server (planned)
+      └── MCP Server
 ```
 
 ## Installation
@@ -93,7 +102,7 @@ Create a virtual environment and install the project:
 ```bash
 uv venv --python 3.12
 source .venv/bin/activate
-uv pip install -e ".[dev]"
+uv pip install -e ".[dev,mcp]"
 ```
 
 ## Configuration
@@ -125,6 +134,18 @@ Then run:
 ```bash
 flowsense analyze <dag_id>
 ```
+
+## MCP Server
+
+Start the FlowSense MCP server over stdio:
+
+```bash
+flowsense-mcp
+```
+
+The server exposes the `analyze_airflow_dag` tool, which returns task drift,
+handoff drift, impact classification, propagation paths, and primary root-cause
+information for a DAG.
 
 ## Development
 
@@ -167,7 +188,11 @@ src/flowsense/
 ├── engine/
 │   ├── drift.py
 │   ├── history.py
-│   └── propagation.py
+│   ├── impact.py
+│   ├── propagation.py
+│   ├── root_cause.py
+│   └── timing.py
+├── mcp/
 └── models/
 ```
 
@@ -194,13 +219,9 @@ Planned areas include:
 - DAG-level analysis models
 - configurable historical baseline windows
 - improved propagation scoring
-- temporal delay analysis
-- upstream/downstream impact separation
-- root-cause analysis
 - change-point detection
 - trend detection
 - richer CLI reporting
-- MCP server integration
 - broader Airflow compatibility testing
 
 ## License
