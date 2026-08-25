@@ -39,8 +39,12 @@ def analyze(
     table.add_column("Deviation")
     table.add_column("Z-Score")
     table.add_column("Severity")
+    table.add_column("Impact")
 
     for task_id, result in analysis.drift_results.items():
+        impact = analysis.task_impacts.get(task_id)
+        impact_label = impact.classification if impact else "-"
+
         table.add_row(
             task_id,
             f"{result.baseline:.2f}s",
@@ -48,6 +52,7 @@ def analyze(
             f"{result.deviation_percent:+.1f}%",
             f"{result.robust_z_score:.2f}",
             result.severity,
+            impact_label,
         )
 
     console.print(table)
@@ -55,7 +60,12 @@ def analyze(
     console.print(f"\nOverall Severity: [bold]{analysis.overall_severity}[/bold]")
 
     if analysis.primary_origin:
-        console.print(f"Primary Origin: [bold]{analysis.primary_origin}[/bold]")
+        console.print(f"Primary Origin: [bold]{analysis.primary_origin.task_id}[/bold]")
+        console.print(f"Reason: [bold]{analysis.primary_origin.classification}[/bold]")
+        console.print(f"Severity: [bold]{analysis.primary_origin.severity}[/bold]")
+        console.print(
+            f"Propagation Score: {analysis.primary_origin.propagation_score:.2f}"
+        )
 
     if analysis.propagation_results:
         console.print("\n[bold]Propagation Analysis[/bold]\n")
