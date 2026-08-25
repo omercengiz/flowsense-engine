@@ -13,7 +13,16 @@ def serialize_analysis(analysis: DAGAnalysis) -> dict:
         "dag_id": analysis.dag_id,
         "runs_analyzed": analysis.runs_analyzed,
         "overall_severity": analysis.overall_severity,
-        "primary_origin": analysis.primary_origin,
+        "primary_origin": (
+            {
+                "task_id": analysis.primary_origin.task_id,
+                "classification": analysis.primary_origin.classification,
+                "severity": analysis.primary_origin.severity,
+                "propagation_score": analysis.primary_origin.propagation_score,
+            }
+            if analysis.primary_origin
+            else None
+        ),
         "drift_results": {
             task_id: {
                 "baseline": result.baseline,
@@ -24,6 +33,28 @@ def serialize_analysis(analysis: DAGAnalysis) -> dict:
                 "severity": result.severity,
             }
             for task_id, result in analysis.drift_results.items()
+        },
+        "handoff_drift_results": {
+            f"{upstream}->{downstream}": {
+                "baseline": result.baseline,
+                "current": result.current,
+                "mad": result.mad,
+                "robust_z_score": result.robust_z_score,
+                "deviation_percent": result.deviation_percent,
+                "severity": result.severity,
+            }
+            for (
+                upstream,
+                downstream,
+            ), result in analysis.handoff_drift_results.items()
+        },
+        "task_impacts": {
+            task_id: {
+                "classification": impact.classification,
+                "task_severity": impact.task_severity,
+                "upstream_handoff_severity": impact.upstream_handoff_severity,
+            }
+            for task_id, impact in analysis.task_impacts.items()
         },
         "propagation_results": [
             {
