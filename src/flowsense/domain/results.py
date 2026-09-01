@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from flowsense.domain.enums import ImpactClassification, Severity
+from flowsense.domain.enums import ImpactClassification, Severity, TrendDirection
 
 
 @dataclass(frozen=True)
@@ -14,6 +14,18 @@ class DriftResult:
     robust_z_score: float
     deviation_percent: float
     severity: Severity
+
+
+@dataclass(frozen=True)
+class TrendResult:
+    subject_id: str
+    direction: TrendDirection
+    slope_per_observation: float
+    estimated_change: float
+    change_percent: float | None
+    score: float
+    directional_consistency: float
+    observations: int
 
 
 @dataclass(frozen=True)
@@ -59,3 +71,7 @@ class DAGAnalysis:
     propagation_results: list[PropagationResult]
     dependencies: dict[str, list[str]]
     diagnostics: list[AnalysisDiagnostic] = field(default_factory=list)
+    trend_results: dict[str, TrendResult] = field(default_factory=dict)
+    handoff_trend_results: dict[tuple[str, str], TrendResult] = field(
+        default_factory=dict
+    )

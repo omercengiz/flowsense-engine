@@ -14,6 +14,8 @@ from flowsense.domain import (
     Severity,
     TaskImpact,
     TaskRun,
+    TrendDirection,
+    TrendResult,
 )
 from flowsense.infrastructure.airflow import AirflowApiError, AirflowClient
 
@@ -38,6 +40,8 @@ __all__ = [
     "Severity",
     "TaskImpact",
     "TaskRun",
+    "TrendDirection",
+    "TrendResult",
     "__version__",
     "analyze_dag",
 ]

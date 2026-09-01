@@ -5,6 +5,7 @@ import pytest
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
+from flowsense import TrendResult
 from flowsense.engine.drift import DriftResult
 from flowsense.engine.impact import TaskImpact
 from flowsense.engine.root_cause import RootCauseResult
@@ -102,6 +103,30 @@ def test_serialize_analysis() -> None:
                 message="load requires at least 5 runs.",
             )
         ],
+        trend_results={
+            "transform": TrendResult(
+                subject_id="transform",
+                direction="INCREASING",
+                slope_per_observation=1.0,
+                estimated_change=5.0,
+                change_percent=166.67,
+                score=5.0,
+                directional_consistency=1.0,
+                observations=6,
+            )
+        },
+        handoff_trend_results={
+            ("extract", "transform"): TrendResult(
+                subject_id="extract->transform",
+                direction="INCREASING",
+                slope_per_observation=0.5,
+                estimated_change=2.5,
+                change_percent=125.0,
+                score=5.0,
+                directional_consistency=1.0,
+                observations=6,
+            )
+        },
     )
 
     result = serialize_analysis(analysis)
@@ -148,3 +173,21 @@ def test_serialize_analysis() -> None:
             "message": "load requires at least 5 runs.",
         }
     ]
+    assert result["trend_results"]["transform"] == {
+        "direction": "INCREASING",
+        "slope_per_observation": 1.0,
+        "estimated_change": 5.0,
+        "change_percent": 166.67,
+        "score": 5.0,
+        "directional_consistency": 1.0,
+        "observations": 6,
+    }
+    assert result["handoff_trend_results"]["extract->transform"] == {
+        "direction": "INCREASING",
+        "slope_per_observation": 0.5,
+        "estimated_change": 2.5,
+        "change_percent": 125.0,
+        "score": 5.0,
+        "directional_consistency": 1.0,
+        "observations": 6,
+    }

@@ -17,6 +17,7 @@ from flowsense.engine.timing import (
     build_handoff_history_with_diagnostics,
     calculate_handoff_drift,
 )
+from flowsense.engine.trend import detect_trend
 
 
 def analyze_dag(
@@ -26,10 +27,15 @@ def analyze_dag(
     task_runs = source.collect_task_runs(dag_id)
     duration_history = build_duration_history(task_runs)
     diagnostics: list[AnalysisDiagnostic] = []
+    trend_results = {}
 
     drift_results = {}
 
     for task_id, durations in duration_history.items():
+        trend = detect_trend(task_id, durations)
+        if trend is not None:
+            trend_results[task_id] = trend
+
         try:
             drift_results[task_id] = calculate_drift(
                 task_id=task_id,
@@ -51,6 +57,7 @@ def analyze_dag(
         dependencies=dependencies,
     )
     handoff_history = handoff_history_result.history
+    handoff_trend_results = {}
 
     diagnostics.extend(
         AnalysisDiagnostic(
@@ -65,6 +72,9 @@ def analyze_dag(
 
     for edge, delays in handoff_history.items():
         upstream_task, downstream_task = edge
+        trend = detect_trend(f"{upstream_task}->{downstream_task}", delays)
+        if trend is not None:
+            handoff_trend_results[edge] = trend
 
         try:
             handoff_drift_results[edge] = calculate_handoff_drift(
@@ -134,4 +144,6 @@ def analyze_dag(
         propagation_results=propagation_results,
         dependencies=dependencies,
         diagnostics=diagnostics,
+        trend_results=trend_results,
+        handoff_trend_results=handoff_trend_results,
     )

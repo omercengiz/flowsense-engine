@@ -1,4 +1,4 @@
-from flowsense.domain.enums import ImpactClassification, Severity
+from flowsense.domain.enums import ImpactClassification, Severity, TrendDirection
 from flowsense.domain.exceptions import (
     FlowSenseError,
     InsufficientHistoryError,
@@ -12,6 +12,7 @@ from flowsense.domain.results import (
     PropagationResult,
     RootCauseResult,
     TaskImpact,
+    TrendResult,
 )
 
 __all__ = [
@@ -27,4 +28,6 @@ __all__ = [
     "Severity",
     "TaskImpact",
     "TaskRun",
+    "TrendDirection",
+    "TrendResult",
 ]

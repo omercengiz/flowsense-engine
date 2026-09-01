@@ -27,6 +27,8 @@ def test_top_level_api_declares_supported_exports() -> None:
         "DAGDataSource",
         "Severity",
         "TaskRun",
+        "TrendDirection",
+        "TrendResult",
         "__version__",
         "analyze_dag",
     }

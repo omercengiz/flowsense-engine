@@ -68,6 +68,24 @@ def analyze(
 
     console.print(f"\nOverall Severity: [bold]{analysis.overall_severity}[/bold]")
 
+    if analysis.trend_results or analysis.handoff_trend_results:
+        console.print("\n[bold]Trends[/bold]\n")
+
+        for result in [
+            *analysis.trend_results.values(),
+            *analysis.handoff_trend_results.values(),
+        ]:
+            change = (
+                f"{result.change_percent:+.1f}%"
+                if result.change_percent is not None
+                else "n/a"
+            )
+            console.print(
+                f"{result.subject_id}: {result.direction} "
+                f"({result.slope_per_observation:+.2f}/run, {change}, "
+                f"score={result.score:.2f})"
+            )
+
     if analysis.primary_origin:
         console.print(f"Primary Origin: [bold]{analysis.primary_origin.task_id}[/bold]")
         console.print(f"Reason: [bold]{analysis.primary_origin.classification}[/bold]")
