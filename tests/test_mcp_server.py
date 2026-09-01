@@ -5,6 +5,7 @@ import pytest
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
+from flowsense import ChangePointResult, TrendResult
 from flowsense.engine.drift import DriftResult
 from flowsense.engine.impact import TaskImpact
 from flowsense.engine.root_cause import RootCauseResult
@@ -102,6 +103,52 @@ def test_serialize_analysis() -> None:
                 message="load requires at least 5 runs.",
             )
         ],
+        change_point_results={
+            "transform": ChangePointResult(
+                subject_id="transform",
+                change_index=3,
+                before_median=3.0,
+                after_median=6.0,
+                change_percent=100.0,
+                score=5.0,
+                direction="INCREASE",
+            )
+        },
+        handoff_change_point_results={
+            ("extract", "transform"): ChangePointResult(
+                subject_id="extract->transform",
+                change_index=3,
+                before_median=2.0,
+                after_median=4.0,
+                change_percent=100.0,
+                score=5.0,
+                direction="INCREASE",
+            )
+        },
+        trend_results={
+            "transform": TrendResult(
+                subject_id="transform",
+                direction="INCREASING",
+                slope_per_observation=1.0,
+                estimated_change=5.0,
+                change_percent=166.67,
+                score=5.0,
+                directional_consistency=1.0,
+                observations=6,
+            )
+        },
+        handoff_trend_results={
+            ("extract", "transform"): TrendResult(
+                subject_id="extract->transform",
+                direction="INCREASING",
+                slope_per_observation=0.5,
+                estimated_change=2.5,
+                change_percent=125.0,
+                score=5.0,
+                directional_consistency=1.0,
+                observations=6,
+            )
+        },
     )
 
     result = serialize_analysis(analysis)
@@ -148,3 +195,37 @@ def test_serialize_analysis() -> None:
             "message": "load requires at least 5 runs.",
         }
     ]
+    assert result["change_point_results"]["transform"] == {
+        "change_index": 3,
+        "before_median": 3.0,
+        "after_median": 6.0,
+        "change_percent": 100.0,
+        "score": 5.0,
+        "direction": "INCREASE",
+    }
+    assert result["handoff_change_point_results"]["extract->transform"] == {
+        "change_index": 3,
+        "before_median": 2.0,
+        "after_median": 4.0,
+        "change_percent": 100.0,
+        "score": 5.0,
+        "direction": "INCREASE",
+    }
+    assert result["trend_results"]["transform"] == {
+        "direction": "INCREASING",
+        "slope_per_observation": 1.0,
+        "estimated_change": 5.0,
+        "change_percent": 166.67,
+        "score": 5.0,
+        "directional_consistency": 1.0,
+        "observations": 6,
+    }
+    assert result["handoff_trend_results"]["extract->transform"] == {
+        "direction": "INCREASING",
+        "slope_per_observation": 0.5,
+        "estimated_change": 2.5,
+        "change_percent": 125.0,
+        "score": 5.0,
+        "directional_consistency": 1.0,
+        "observations": 6,
+    }

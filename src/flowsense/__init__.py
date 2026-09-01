@@ -5,6 +5,8 @@ from flowsense.domain import (
     DEFAULT_ANALYSIS_POLICY,
     AnalysisDiagnostic,
     AnalysisPolicy,
+    ChangeDirection,
+    ChangePointResult,
     DAGAnalysis,
     DriftResult,
     FlowSenseError,
@@ -17,6 +19,8 @@ from flowsense.domain import (
     Severity,
     TaskImpact,
     TaskRun,
+    TrendDirection,
+    TrendResult,
 )
 from flowsense.infrastructure.airflow import AirflowApiError, AirflowClient
 
@@ -31,6 +35,8 @@ __all__ = [
     "AirflowClient",
     "AnalysisDiagnostic",
     "AnalysisPolicy",
+    "ChangeDirection",
+    "ChangePointResult",
     "DAGAnalysis",
     "DAGDataSource",
     "DriftResult",
@@ -44,6 +50,8 @@ __all__ = [
     "Severity",
     "TaskImpact",
     "TaskRun",
+    "TrendDirection",
+    "TrendResult",
     "__version__",
     "analyze_dag",
 ]

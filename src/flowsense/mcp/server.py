@@ -47,6 +47,29 @@ def serialize_analysis(analysis: DAGAnalysis) -> dict:
             }
             for task_id, result in analysis.drift_results.items()
         },
+        "change_point_results": {
+            task_id: {
+                "change_index": result.change_index,
+                "before_median": result.before_median,
+                "after_median": result.after_median,
+                "change_percent": result.change_percent,
+                "score": result.score,
+                "direction": result.direction,
+            }
+            for task_id, result in analysis.change_point_results.items()
+        },
+        "trend_results": {
+            task_id: {
+                "direction": result.direction,
+                "slope_per_observation": result.slope_per_observation,
+                "estimated_change": result.estimated_change,
+                "change_percent": result.change_percent,
+                "score": result.score,
+                "directional_consistency": result.directional_consistency,
+                "observations": result.observations,
+            }
+            for task_id, result in analysis.trend_results.items()
+        },
         "handoff_drift_results": {
             f"{upstream}->{downstream}": {
                 "baseline": result.baseline,
@@ -60,6 +83,32 @@ def serialize_analysis(analysis: DAGAnalysis) -> dict:
                 upstream,
                 downstream,
             ), result in analysis.handoff_drift_results.items()
+        },
+        "handoff_change_point_results": {
+            f"{upstream}->{downstream}": {
+                "change_index": result.change_index,
+                "before_median": result.before_median,
+                "after_median": result.after_median,
+                "change_percent": result.change_percent,
+                "score": result.score,
+                "direction": result.direction,
+            }
+            for (
+                upstream,
+                downstream,
+            ), result in analysis.handoff_change_point_results.items()
+        },
+        "handoff_trend_results": {
+            f"{upstream}->{downstream}": {
+                "direction": result.direction,
+                "slope_per_observation": result.slope_per_observation,
+                "estimated_change": result.estimated_change,
+                "change_percent": result.change_percent,
+                "score": result.score,
+                "directional_consistency": result.directional_consistency,
+                "observations": result.observations,
+            }
+            for (upstream, downstream), result in analysis.handoff_trend_results.items()
         },
         "task_impacts": {
             task_id: {

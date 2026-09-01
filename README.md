@@ -228,6 +228,8 @@ src/flowsense/
 ├── application/
 ├── domain/
 ├── engine/
+│   ├── change_point.py
+│   ├── trend.py
 │   ├── drift.py
 │   ├── history.py
 │   ├── impact.py
@@ -257,6 +259,19 @@ severity is weighted by graph distance with a `0.8` decay per hop, so anomalies
 closer to the origin contribute more strongly than anomalies farther along the
 same path.
 
+FlowSense also scans ordered task-duration and handoff-delay histories for
+persistent level shifts. Each candidate split must leave at least three
+observations on both sides. Candidates are compared with a robust, MAD-based
+score, and detected changes report their location, direction, before/after
+medians, percentage change, and score. This prevents a single latest-run outlier
+from being reported as a structural change.
+
+FlowSense detects sustained increasing and decreasing trends in ordered task
+durations and handoff delays with a robust Theil-Sen slope. A trend must contain
+at least five observations, meet a minimum directional-consistency ratio, and
+exceed a MAD-based score threshold. Results include the per-run slope, estimated
+total and percentage change, direction, consistency, and score.
+
 ## Project Status
 
 FlowSense is currently in early development.
@@ -268,9 +283,6 @@ The current implementation should be considered experimental and is not yet inte
 Planned areas include:
 
 - DAG-level analysis models
-- configurable historical baseline windows
-- change-point detection
-- trend detection
 - richer CLI reporting
 - broader Airflow compatibility testing
 

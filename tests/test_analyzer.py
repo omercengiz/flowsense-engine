@@ -79,6 +79,112 @@ def test_analyze_dag_identifies_isolated_primary_origin() -> None:
     assert analysis.primary_origin.task_id == "transform"
 
 
+def test_analyze_dag_detects_task_and_handoff_change_points() -> None:
+    client = MagicMock(spec=DAGDataSource)
+    base_time = datetime(2026, 8, 20, 10, 0, tzinfo=UTC)
+    task_runs = []
+
+    for index, (duration, delay) in enumerate(
+        zip(
+            [3.0, 3.1, 2.9, 6.0, 6.1, 5.9],
+            [1.0, 1.1, 0.9, 4.0, 4.1, 3.9],
+            strict=True,
+        ),
+        start=1,
+    ):
+        extract_end = base_time + timedelta(minutes=index)
+        transform_start = extract_end + timedelta(seconds=delay)
+        task_runs.extend(
+            [
+                TaskRun(
+                    dag_id="demo",
+                    dag_run_id=f"run_{index}",
+                    task_id="extract",
+                    state="success",
+                    end_date=extract_end,
+                    duration=1.0,
+                ),
+                TaskRun(
+                    dag_id="demo",
+                    dag_run_id=f"run_{index}",
+                    task_id="transform",
+                    state="success",
+                    start_date=transform_start,
+                    duration=duration,
+                ),
+            ]
+        )
+
+    client.collect_task_runs.return_value = task_runs
+    client.get_dag_dependencies.return_value = {
+        "extract": ["transform"],
+        "transform": [],
+    }
+
+    analysis = analyze_dag("demo", client)
+
+    task_change = analysis.change_point_results["transform"]
+    handoff_change = analysis.handoff_change_point_results[("extract", "transform")]
+
+    assert task_change.change_index == 3
+    assert task_change.direction == "INCREASE"
+    assert handoff_change.change_index == 3
+    assert handoff_change.direction == "INCREASE"
+
+
+def test_analyze_dag_detects_task_and_handoff_trends() -> None:
+    client = MagicMock(spec=DAGDataSource)
+    base_time = datetime(2026, 8, 20, 10, 0, tzinfo=UTC)
+    task_runs = []
+
+    for index, (duration, delay) in enumerate(
+        zip(
+            [3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
+            [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            strict=True,
+        ),
+        start=1,
+    ):
+        extract_end = base_time + timedelta(minutes=index)
+        transform_start = extract_end + timedelta(seconds=delay)
+        task_runs.extend(
+            [
+                TaskRun(
+                    dag_id="demo",
+                    dag_run_id=f"run_{index}",
+                    task_id="extract",
+                    state="success",
+                    end_date=extract_end,
+                    duration=1.0,
+                ),
+                TaskRun(
+                    dag_id="demo",
+                    dag_run_id=f"run_{index}",
+                    task_id="transform",
+                    state="success",
+                    start_date=transform_start,
+                    duration=duration,
+                ),
+            ]
+        )
+
+    client.collect_task_runs.return_value = task_runs
+    client.get_dag_dependencies.return_value = {
+        "extract": ["transform"],
+        "transform": [],
+    }
+
+    analysis = analyze_dag("demo", client)
+
+    task_trend = analysis.trend_results["transform"]
+    handoff_trend = analysis.handoff_trend_results[("extract", "transform")]
+
+    assert task_trend.direction == "INCREASING"
+    assert task_trend.slope_per_observation == 1.0
+    assert handoff_trend.direction == "INCREASING"
+    assert handoff_trend.slope_per_observation == 1.0
+
+
 def test_analyze_dag_calculates_handoff_drift() -> None:
     client = MagicMock(spec=DAGDataSource)
 
