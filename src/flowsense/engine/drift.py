@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -37,7 +38,10 @@ def calculate_drift(
     mad = float(np.median(absolute_deviations))
 
     if mad == 0:
-        robust_z_score = 0.0
+        if math.isclose(current, median):
+            robust_z_score = 0.0
+        else:
+            robust_z_score = math.copysign(5.0, current - median)
     else:
         robust_z_score = 0.6745 * (current - median) / mad
 
