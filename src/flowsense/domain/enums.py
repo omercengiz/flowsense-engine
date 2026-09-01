@@ -26,6 +26,11 @@ class ChangeDirection(StrEnum):
     DECREASE = "DECREASE"
 
 
+class TrendDirection(StrEnum):
+    INCREASING = "INCREASING"
+    DECREASING = "DECREASING"
+
+
 SEVERITY_SCORE: dict[Severity, int] = {
     Severity.NORMAL: 0,
     Severity.MEDIUM: 1,

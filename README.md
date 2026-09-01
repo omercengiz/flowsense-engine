@@ -229,6 +229,7 @@ src/flowsense/
 ├── domain/
 ├── engine/
 │   ├── change_point.py
+│   ├── trend.py
 │   ├── drift.py
 │   ├── history.py
 │   ├── impact.py
@@ -265,6 +266,12 @@ score, and detected changes report their location, direction, before/after
 medians, percentage change, and score. This prevents a single latest-run outlier
 from being reported as a structural change.
 
+FlowSense detects sustained increasing and decreasing trends in ordered task
+durations and handoff delays with a robust Theil-Sen slope. A trend must contain
+at least five observations, meet a minimum directional-consistency ratio, and
+exceed a MAD-based score threshold. Results include the per-run slope, estimated
+total and percentage change, direction, consistency, and score.
+
 ## Project Status
 
 FlowSense is currently in early development.
@@ -276,7 +283,6 @@ The current implementation should be considered experimental and is not yet inte
 Planned areas include:
 
 - DAG-level analysis models
-- trend detection
 - richer CLI reporting
 - broader Airflow compatibility testing
 

@@ -31,6 +31,8 @@ def test_top_level_api_declares_supported_exports() -> None:
         "Severity",
         "MappedTaskAggregation",
         "TaskRun",
+        "TrendDirection",
+        "TrendResult",
         "__version__",
         "analyze_dag",
     }
