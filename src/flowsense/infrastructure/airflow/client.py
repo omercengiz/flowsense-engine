@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Self
+from typing import Any, Self
 
 import httpx
 
@@ -53,11 +53,13 @@ class AirflowClient:
         url: str,
         **kwargs: object,
     ) -> httpx.Response:
+        request_kwargs: dict[str, Any] = dict(kwargs)
+
         try:
             response = self._http_client.request(
                 method=method,
                 url=url,
-                **kwargs,
+                **request_kwargs,
             )
             response.raise_for_status()
         except httpx.HTTPStatusError as exc:
@@ -87,8 +89,9 @@ class AirflowClient:
             },
         )
 
-        self._token = response.json()["access_token"]
-        return self._token
+        token: str = response.json()["access_token"]
+        self._token = token
+        return token
 
     def _headers(self) -> dict[str, str]:
         return {
@@ -159,13 +162,12 @@ class AirflowClient:
         dag_runs = [
             AirflowDagRunDTO.model_validate(item) for item in response["dag_runs"]
         ]
-        dag_runs.sort(
-            key=lambda run: (
-                (run.run_after or run.queued_at).timestamp()
-                if run.run_after or run.queued_at
-                else float("-inf")
-            )
-        )
+
+        def run_timestamp(run: AirflowDagRunDTO) -> float:
+            timestamp = run.run_after or run.queued_at
+            return timestamp.timestamp() if timestamp is not None else float("-inf")
+
+        dag_runs.sort(key=run_timestamp)
 
         task_runs: list[TaskRun] = []
 
