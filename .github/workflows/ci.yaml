@@ -28,8 +28,20 @@ jobs:
       - name: Run Ruff
         run: ruff check .
 
+      - name: Check formatting
+        run: ruff format --check .
+
       - name: Run Pyright
         run: pyright
 
       - name: Run unit tests
         run: python -m pytest -m "not integration" -v
+
+      - name: Build package
+        run: python -m build
+
+      - name: Smoke test wheel
+        run: |
+          uv venv /tmp/flowsense-wheel-test
+          uv pip install --python /tmp/flowsense-wheel-test/bin/python dist/*.whl
+          /tmp/flowsense-wheel-test/bin/flowsense --help
