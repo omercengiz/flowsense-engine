@@ -7,7 +7,7 @@ from flowsense.engine.impact import classify_task_impact
 from flowsense.engine.propagation import analyze_propagation
 from flowsense.engine.root_cause import select_primary_origin
 from flowsense.engine.timing import (
-    build_handoff_history,
+    build_handoff_history_with_diagnostics,
     calculate_handoff_drift,
 )
 from flowsense.models import AnalysisDiagnostic, DAGAnalysis
@@ -39,9 +39,19 @@ def analyze_dag(dag_id: str) -> DAGAnalysis:
 
     dependencies = client.get_dag_dependencies(dag_id)
 
-    handoff_history = build_handoff_history(
+    handoff_history_result = build_handoff_history_with_diagnostics(
         task_runs=task_runs,
         dependencies=dependencies,
+    )
+    handoff_history = handoff_history_result.history
+
+    diagnostics.extend(
+        AnalysisDiagnostic(
+            code=diagnostic.code,
+            subject_id=(f"{diagnostic.upstream_task}->{diagnostic.downstream_task}"),
+            message=diagnostic.message,
+        )
+        for diagnostic in handoff_history_result.diagnostics
     )
 
     handoff_drift_results = {}

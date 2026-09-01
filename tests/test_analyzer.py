@@ -292,3 +292,38 @@ def test_analyze_dag_reports_insufficient_history_diagnostics(
         ("INSUFFICIENT_TASK_HISTORY", "transform"),
         ("INSUFFICIENT_HANDOFF_HISTORY", "extract->transform"),
     }
+
+
+@patch("flowsense.engine.analyzer.AirflowClient")
+def test_analyze_dag_reports_missing_handoff_timestamp(
+    mock_client_class: MagicMock,
+) -> None:
+    client = mock_client_class.return_value
+    client.collect_task_runs.return_value = [
+        TaskRun(
+            dag_id="demo",
+            dag_run_id="run_1",
+            task_id="extract",
+            state="success",
+            end_date=None,
+        ),
+        TaskRun(
+            dag_id="demo",
+            dag_run_id="run_1",
+            task_id="transform",
+            state="success",
+            start_date=datetime(2026, 8, 20, 10, 0, tzinfo=UTC),
+        ),
+    ]
+    client.get_dag_dependencies.return_value = {
+        "extract": ["transform"],
+        "transform": [],
+    }
+
+    analysis = analyze_dag("demo")
+
+    assert any(
+        diagnostic.code == "MISSING_UPSTREAM_END_DATE"
+        and diagnostic.subject_id == "extract->transform"
+        for diagnostic in analysis.diagnostics
+    )

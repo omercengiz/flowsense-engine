@@ -4,6 +4,7 @@ import pytest
 
 from flowsense.engine.timing import (
     build_handoff_history,
+    build_handoff_history_with_diagnostics,
     calculate_handoff_delay,
     calculate_handoff_drift,
 )
@@ -190,6 +191,53 @@ def test_build_handoff_history_aggregates_mapped_task_boundaries() -> None:
     )
 
     assert history == {("extract", "transform"): [2.0]}
+
+
+def test_build_handoff_history_reports_missing_timestamps() -> None:
+    task_runs = [
+        TaskRun(
+            dag_id="demo",
+            dag_run_id="run_1",
+            task_id="extract",
+            state="success",
+            end_date=None,
+        ),
+        TaskRun(
+            dag_id="demo",
+            dag_run_id="run_1",
+            task_id="transform",
+            state="success",
+            start_date=datetime(2026, 8, 20, 10, 0, tzinfo=UTC),
+        ),
+        TaskRun(
+            dag_id="demo",
+            dag_run_id="run_2",
+            task_id="extract",
+            state="success",
+            end_date=datetime(2026, 8, 20, 11, 0, tzinfo=UTC),
+        ),
+        TaskRun(
+            dag_id="demo",
+            dag_run_id="run_2",
+            task_id="transform",
+            state="success",
+            start_date=None,
+        ),
+    ]
+
+    result = build_handoff_history_with_diagnostics(
+        task_runs=task_runs,
+        dependencies={
+            "extract": ["transform"],
+            "transform": [],
+        },
+    )
+
+    assert result.history == {}
+    assert [diagnostic.code for diagnostic in result.diagnostics] == [
+        "MISSING_UPSTREAM_END_DATE",
+        "MISSING_DOWNSTREAM_START_DATE",
+    ]
 
 
 def test_calculate_handoff_drift_detects_anomaly() -> None:

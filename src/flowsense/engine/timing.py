@@ -14,6 +14,21 @@ class HandoffTiming:
     handoff_delay: float
 
 
+@dataclass(frozen=True)
+class HandoffHistoryDiagnostic:
+    code: str
+    upstream_task: str
+    downstream_task: str
+    dag_run_id: str
+    message: str
+
+
+@dataclass
+class HandoffHistoryResult:
+    history: dict[tuple[str, str], list[float]]
+    diagnostics: list[HandoffHistoryDiagnostic]
+
+
 def calculate_handoff_delay(
     upstream_run: TaskRun,
     downstream_run: TaskRun,
@@ -41,6 +56,16 @@ def build_handoff_history(
     task_runs: list[TaskRun],
     dependencies: dict[str, list[str]],
 ) -> dict[tuple[str, str], list[float]]:
+    return build_handoff_history_with_diagnostics(
+        task_runs=task_runs,
+        dependencies=dependencies,
+    ).history
+
+
+def build_handoff_history_with_diagnostics(
+    task_runs: list[TaskRun],
+    dependencies: dict[str, list[str]],
+) -> HandoffHistoryResult:
     """Build logical-edge history across regular and dynamically mapped tasks.
 
     A mapped upstream is complete at its latest instance end, while a mapped
@@ -53,35 +78,82 @@ def build_handoff_history(
         tasks_in_run.setdefault(task_run.task_id, []).append(task_run)
 
     history: dict[tuple[str, str], list[float]] = {}
+    diagnostics: list[HandoffHistoryDiagnostic] = []
 
-    for tasks_in_run in runs_by_id.values():
+    for dag_run_id, tasks_in_run in runs_by_id.items():
         for upstream_task, downstream_tasks in dependencies.items():
             upstream_runs = tasks_in_run.get(upstream_task, [])
-            upstream_runs_with_end = [
-                task_run for task_run in upstream_runs if task_run.end_date is not None
-            ]
 
-            if not upstream_runs_with_end:
+            if not upstream_runs:
+                for downstream_task in downstream_tasks:
+                    diagnostics.append(
+                        HandoffHistoryDiagnostic(
+                            code="MISSING_UPSTREAM_TASK_RUN",
+                            upstream_task=upstream_task,
+                            downstream_task=downstream_task,
+                            dag_run_id=dag_run_id,
+                            message=(
+                                f"{upstream_task} has no task run in {dag_run_id}."
+                            ),
+                        )
+                    )
+                continue
+
+            if any(task_run.end_date is None for task_run in upstream_runs):
+                for downstream_task in downstream_tasks:
+                    diagnostics.append(
+                        HandoffHistoryDiagnostic(
+                            code="MISSING_UPSTREAM_END_DATE",
+                            upstream_task=upstream_task,
+                            downstream_task=downstream_task,
+                            dag_run_id=dag_run_id,
+                            message=(
+                                f"{upstream_task} has no complete end_date in "
+                                f"{dag_run_id}."
+                            ),
+                        )
+                    )
                 continue
 
             upstream_run = max(
-                upstream_runs_with_end,
+                upstream_runs,
                 key=lambda task_run: task_run.end_date,
             )
 
             for downstream_task in downstream_tasks:
                 downstream_runs = tasks_in_run.get(downstream_task, [])
-                downstream_runs_with_start = [
-                    task_run
-                    for task_run in downstream_runs
-                    if task_run.start_date is not None
-                ]
 
-                if not downstream_runs_with_start:
+                if not downstream_runs:
+                    diagnostics.append(
+                        HandoffHistoryDiagnostic(
+                            code="MISSING_DOWNSTREAM_TASK_RUN",
+                            upstream_task=upstream_task,
+                            downstream_task=downstream_task,
+                            dag_run_id=dag_run_id,
+                            message=(
+                                f"{downstream_task} has no task run in {dag_run_id}."
+                            ),
+                        )
+                    )
+                    continue
+
+                if any(task_run.start_date is None for task_run in downstream_runs):
+                    diagnostics.append(
+                        HandoffHistoryDiagnostic(
+                            code="MISSING_DOWNSTREAM_START_DATE",
+                            upstream_task=upstream_task,
+                            downstream_task=downstream_task,
+                            dag_run_id=dag_run_id,
+                            message=(
+                                f"{downstream_task} has no complete start_date in "
+                                f"{dag_run_id}."
+                            ),
+                        )
+                    )
                     continue
 
                 downstream_run = min(
-                    downstream_runs_with_start,
+                    downstream_runs,
                     key=lambda task_run: task_run.start_date,
                 )
 
@@ -90,7 +162,16 @@ def build_handoff_history(
                         upstream_run=upstream_run,
                         downstream_run=downstream_run,
                     )
-                except ValueError:
+                except ValueError as exc:
+                    diagnostics.append(
+                        HandoffHistoryDiagnostic(
+                            code="INVALID_HANDOFF_TIMING",
+                            upstream_task=upstream_task,
+                            downstream_task=downstream_task,
+                            dag_run_id=dag_run_id,
+                            message=str(exc),
+                        )
+                    )
                     continue
 
                 edge = (
@@ -100,7 +181,10 @@ def build_handoff_history(
 
                 history.setdefault(edge, []).append(timing.handoff_delay)
 
-    return history
+    return HandoffHistoryResult(
+        history=history,
+        diagnostics=diagnostics,
+    )
 
 
 def calculate_handoff_drift(
