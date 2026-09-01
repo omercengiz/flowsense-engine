@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from flowsense.domain.enums import ImpactClassification, Severity
+from flowsense.domain.policy import DEFAULT_ANALYSIS_POLICY, AnalysisPolicy
 
 
 @dataclass(frozen=True)
@@ -59,3 +60,4 @@ class DAGAnalysis:
     propagation_results: list[PropagationResult]
     dependencies: dict[str, list[str]]
     diagnostics: list[AnalysisDiagnostic] = field(default_factory=list)
+    policy: AnalysisPolicy = DEFAULT_ANALYSIS_POLICY

@@ -2,13 +2,16 @@ from importlib.metadata import PackageNotFoundError, version
 
 from flowsense.application import DAGDataSource, analyze_dag
 from flowsense.domain import (
+    DEFAULT_ANALYSIS_POLICY,
     AnalysisDiagnostic,
+    AnalysisPolicy,
     DAGAnalysis,
     DriftResult,
     FlowSenseError,
     ImpactClassification,
     InsufficientHistoryError,
     InvalidTaskTimingError,
+    MappedTaskAggregation,
     PropagationResult,
     RootCauseResult,
     Severity,
@@ -23,9 +26,11 @@ except PackageNotFoundError:
     __version__ = "0.0.0"
 
 __all__ = [
+    "DEFAULT_ANALYSIS_POLICY",
     "AirflowApiError",
     "AirflowClient",
     "AnalysisDiagnostic",
+    "AnalysisPolicy",
     "DAGAnalysis",
     "DAGDataSource",
     "DriftResult",
@@ -33,6 +38,7 @@ __all__ = [
     "ImpactClassification",
     "InsufficientHistoryError",
     "InvalidTaskTimingError",
+    "MappedTaskAggregation",
     "PropagationResult",
     "RootCauseResult",
     "Severity",

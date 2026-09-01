@@ -153,6 +153,25 @@ print(analysis.overall_severity)
 print(analysis.primary_origin)
 ```
 
+Analysis behavior can be customized with an immutable policy:
+
+```python
+from flowsense import AnalysisPolicy, MappedTaskAggregation
+
+policy = AnalysisPolicy(
+    minimum_history=10,
+    baseline_window=30,
+    medium_threshold=2.5,
+    high_threshold=4.0,
+    critical_threshold=6.0,
+    mapped_task_aggregation=MappedTaskAggregation.MAX,
+)
+```
+
+`baseline_window` limits the number of historical values used before the current
+run. Mapped task durations can be aggregated with `MAX`, `MEAN`, or `SUM`. The
+same policy options are available through the CLI and MCP tool.
+
 Custom data sources can implement the `DAGDataSource` protocol and be passed to
 `analyze_dag`. Names exported directly from `flowsense` form the supported public
 API. Imports from internal packages such as `flowsense.engine` should be treated

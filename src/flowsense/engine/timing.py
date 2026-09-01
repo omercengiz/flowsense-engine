@@ -3,7 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-from flowsense.domain import DriftResult, InvalidTaskTimingError, TaskRun
+from flowsense.domain import (
+    DEFAULT_ANALYSIS_POLICY,
+    AnalysisPolicy,
+    DriftResult,
+    InvalidTaskTimingError,
+    TaskRun,
+)
 from flowsense.engine.drift import calculate_drift
 
 
@@ -204,10 +210,12 @@ def calculate_handoff_drift(
     upstream_task: str,
     downstream_task: str,
     handoff_delays: list[float],
+    policy: AnalysisPolicy = DEFAULT_ANALYSIS_POLICY,
 ) -> DriftResult:
     edge_id = f"{upstream_task}->{downstream_task}"
 
     return calculate_drift(
         task_id=edge_id,
         durations=handoff_delays,
+        policy=policy,
     )

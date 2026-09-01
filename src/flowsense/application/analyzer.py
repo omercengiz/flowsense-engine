@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from flowsense.application.ports import DAGDataSource
 from flowsense.domain import (
+    DEFAULT_ANALYSIS_POLICY,
     AnalysisDiagnostic,
+    AnalysisPolicy,
     DAGAnalysis,
     InsufficientHistoryError,
     Severity,
@@ -22,9 +24,13 @@ from flowsense.engine.timing import (
 def analyze_dag(
     dag_id: str,
     source: DAGDataSource,
+    policy: AnalysisPolicy = DEFAULT_ANALYSIS_POLICY,
 ) -> DAGAnalysis:
     task_runs = source.collect_task_runs(dag_id)
-    duration_history = build_duration_history(task_runs)
+    duration_history = build_duration_history(
+        task_runs,
+        aggregation=policy.mapped_task_aggregation,
+    )
     diagnostics: list[AnalysisDiagnostic] = []
 
     drift_results = {}
@@ -34,6 +40,7 @@ def analyze_dag(
             drift_results[task_id] = calculate_drift(
                 task_id=task_id,
                 durations=durations,
+                policy=policy,
             )
         except InsufficientHistoryError as exc:
             diagnostics.append(
@@ -71,6 +78,7 @@ def analyze_dag(
                 upstream_task=upstream_task,
                 downstream_task=downstream_task,
                 handoff_delays=delays,
+                policy=policy,
             )
         except InsufficientHistoryError as exc:
             diagnostics.append(
@@ -134,4 +142,5 @@ def analyze_dag(
         propagation_results=propagation_results,
         dependencies=dependencies,
         diagnostics=diagnostics,
+        policy=policy,
     )

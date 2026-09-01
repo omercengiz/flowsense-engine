@@ -15,6 +15,12 @@ class ImpactClassification(StrEnum):
     COMBINED = "COMBINED"
 
 
+class MappedTaskAggregation(StrEnum):
+    MAX = "MAX"
+    MEAN = "MEAN"
+    SUM = "SUM"
+
+
 SEVERITY_SCORE: dict[Severity, int] = {
     Severity.NORMAL: 0,
     Severity.MEDIUM: 1,

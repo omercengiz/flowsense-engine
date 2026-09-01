@@ -1,10 +1,11 @@
-from flowsense.domain.enums import ImpactClassification, Severity
+from flowsense.domain.enums import ImpactClassification, MappedTaskAggregation, Severity
 from flowsense.domain.exceptions import (
     FlowSenseError,
     InsufficientHistoryError,
     InvalidTaskTimingError,
 )
 from flowsense.domain.models import TaskRun
+from flowsense.domain.policy import DEFAULT_ANALYSIS_POLICY, AnalysisPolicy
 from flowsense.domain.results import (
     AnalysisDiagnostic,
     DAGAnalysis,
@@ -15,13 +16,16 @@ from flowsense.domain.results import (
 )
 
 __all__ = [
+    "DEFAULT_ANALYSIS_POLICY",
     "AnalysisDiagnostic",
+    "AnalysisPolicy",
     "DAGAnalysis",
     "DriftResult",
     "FlowSenseError",
     "ImpactClassification",
     "InsufficientHistoryError",
     "InvalidTaskTimingError",
+    "MappedTaskAggregation",
     "PropagationResult",
     "RootCauseResult",
     "Severity",
