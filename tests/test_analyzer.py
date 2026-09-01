@@ -240,3 +240,55 @@ def test_analyze_dag_uses_handoff_for_overall_severity(
     )
 
     assert analysis.overall_severity == "CRITICAL"
+
+
+@patch("flowsense.engine.analyzer.AirflowClient")
+def test_analyze_dag_reports_insufficient_history_diagnostics(
+    mock_client_class: MagicMock,
+) -> None:
+    client = mock_client_class.return_value
+    base_time = datetime(2026, 8, 20, 10, 0, tzinfo=UTC)
+    task_runs = []
+
+    for index in range(4):
+        dag_run_id = f"run_{index}"
+        extract_end = base_time + timedelta(minutes=index)
+
+        task_runs.extend(
+            [
+                TaskRun(
+                    dag_id="demo",
+                    dag_run_id=dag_run_id,
+                    task_id="extract",
+                    state="success",
+                    end_date=extract_end,
+                    duration=1.0,
+                ),
+                TaskRun(
+                    dag_id="demo",
+                    dag_run_id=dag_run_id,
+                    task_id="transform",
+                    state="success",
+                    start_date=extract_end + timedelta(seconds=2),
+                    duration=3.0,
+                ),
+            ]
+        )
+
+    client.collect_task_runs.return_value = task_runs
+    client.get_dag_dependencies.return_value = {
+        "extract": ["transform"],
+        "transform": [],
+    }
+
+    analysis = analyze_dag("demo")
+
+    diagnostics = {
+        (diagnostic.code, diagnostic.subject_id) for diagnostic in analysis.diagnostics
+    }
+
+    assert diagnostics == {
+        ("INSUFFICIENT_TASK_HISTORY", "extract"),
+        ("INSUFFICIENT_TASK_HISTORY", "transform"),
+        ("INSUFFICIENT_HANDOFF_HISTORY", "extract->transform"),
+    }

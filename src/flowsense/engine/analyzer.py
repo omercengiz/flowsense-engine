@@ -10,7 +10,7 @@ from flowsense.engine.timing import (
     build_handoff_history,
     calculate_handoff_drift,
 )
-from flowsense.models import DAGAnalysis
+from flowsense.models import AnalysisDiagnostic, DAGAnalysis
 
 
 def analyze_dag(dag_id: str) -> DAGAnalysis:
@@ -18,6 +18,7 @@ def analyze_dag(dag_id: str) -> DAGAnalysis:
 
     task_runs = client.collect_task_runs(dag_id)
     duration_history = build_duration_history(task_runs)
+    diagnostics: list[AnalysisDiagnostic] = []
 
     drift_results = {}
 
@@ -27,8 +28,14 @@ def analyze_dag(dag_id: str) -> DAGAnalysis:
                 task_id=task_id,
                 durations=durations,
             )
-        except ValueError:
-            continue
+        except ValueError as exc:
+            diagnostics.append(
+                AnalysisDiagnostic(
+                    code="INSUFFICIENT_TASK_HISTORY",
+                    subject_id=task_id,
+                    message=str(exc),
+                )
+            )
 
     dependencies = client.get_dag_dependencies(dag_id)
 
@@ -48,8 +55,14 @@ def analyze_dag(dag_id: str) -> DAGAnalysis:
                 downstream_task=downstream_task,
                 handoff_delays=delays,
             )
-        except ValueError:
-            continue
+        except ValueError as exc:
+            diagnostics.append(
+                AnalysisDiagnostic(
+                    code="INSUFFICIENT_HANDOFF_HISTORY",
+                    subject_id=f"{_upstream_task}->{downstream_task}",
+                    message=str(exc),
+                )
+            )
 
     task_impacts = {}
 
@@ -111,4 +124,5 @@ def analyze_dag(dag_id: str) -> DAGAnalysis:
         task_impacts=task_impacts,
         propagation_results=propagation_results,
         dependencies=dependencies,
+        diagnostics=diagnostics,
     )

@@ -66,6 +66,14 @@ def serialize_analysis(analysis: DAGAnalysis) -> dict:
             for result in analysis.propagation_results
         ],
         "dependencies": analysis.dependencies,
+        "diagnostics": [
+            {
+                "code": diagnostic.code,
+                "subject_id": diagnostic.subject_id,
+                "message": diagnostic.message,
+            }
+            for diagnostic in analysis.diagnostics
+        ],
     }
 
 

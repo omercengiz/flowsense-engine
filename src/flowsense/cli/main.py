@@ -74,3 +74,11 @@ def analyze(
             console.print(f"Origin: {result.origin_task}")
             console.print(f"Path: {' -> '.join(result.path)}")
             console.print(f"Propagation Score: {result.propagation_score:.2f}")
+
+    if analysis.diagnostics:
+        console.print("\n[bold yellow]Diagnostics[/bold yellow]\n")
+
+        for diagnostic in analysis.diagnostics:
+            console.print(
+                f"[{diagnostic.code}] {diagnostic.subject_id}: {diagnostic.message}"
+            )
