@@ -252,6 +252,11 @@ The latest execution is compared against that baseline using a robust Z-score.
 
 This makes the detector less sensitive to historical outliers than approaches based only on mean and standard deviation.
 
+Propagation scores are normalized to the `0.0–1.0` range. Downstream task
+severity is weighted by graph distance with a `0.8` decay per hop, so anomalies
+closer to the origin contribute more strongly than anomalies farther along the
+same path.
+
 ## Project Status
 
 FlowSense is currently in early development.
@@ -264,7 +269,6 @@ Planned areas include:
 
 - DAG-level analysis models
 - configurable historical baseline windows
-- improved propagation scoring
 - change-point detection
 - trend detection
 - richer CLI reporting
