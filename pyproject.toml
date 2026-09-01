@@ -21,11 +21,12 @@ dev = [
 ]
 
 mcp = [
-    "mcp",
+    "mcp[cli]>=2.0",
 ]
 
 [project.scripts]
 flowsense = "flowsense.cli.main:app"
+flowsense-mcp = "flowsense.mcp.server:main"
 
 [build-system]
 requires = ["setuptools>=75"]

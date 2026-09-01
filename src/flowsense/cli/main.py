@@ -4,10 +4,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from flowsense.collector.airflow_client import AirflowClient
-from flowsense.engine.drift import calculate_drift
-from flowsense.engine.history import build_duration_history
-from flowsense.engine.propagation import analyze_propagation
+from flowsense.engine.analyzer import analyze_dag
 
 app = typer.Typer(
     name="flowsense",
@@ -27,39 +24,12 @@ def main() -> None:
 def analyze(
     dag_id: str = typer.Argument(
         ...,
-        help="Airflow DAG ID to analyze.",
+        help="Airflow DAG id to analyze.",
     ),
 ) -> None:
-    client = AirflowClient()
+    analysis = analyze_dag(dag_id)
 
-    task_runs = client.collect_task_runs(dag_id)
-
-    if not task_runs:
-        console.print(f"[red]No successful task runs found for DAG: {dag_id}[/red]")
-        raise typer.Exit(code=1)
-
-    history = build_duration_history(task_runs)
-
-    drift_results = {}
-
-    for task_id, durations in history.items():
-        result = calculate_drift(
-            task_id,
-            durations,
-        )
-
-        drift_results[task_id] = result
-
-    dependencies = client.get_dag_dependencies(dag_id)
-
-    propagation_results = analyze_propagation(
-        drift_results,
-        dependencies,
-    )
-
-    console.print()
-    console.print(f"[bold]FlowSense Analysis[/bold] — {dag_id}")
-    console.print()
+    console.print(f"\n[bold]FlowSense Analysis — {analysis.dag_id}[/bold]\n")
 
     table = Table()
 
@@ -69,34 +39,38 @@ def analyze(
     table.add_column("Deviation")
     table.add_column("Z-Score")
     table.add_column("Severity")
+    table.add_column("Impact")
 
-    for result in drift_results.values():
+    for task_id, result in analysis.drift_results.items():
+        impact = analysis.task_impacts.get(task_id)
+        impact_label = impact.classification if impact else "-"
+
         table.add_row(
-            result.task_id,
+            task_id,
             f"{result.baseline:.2f}s",
             f"{result.current:.2f}s",
             f"{result.deviation_percent:+.1f}%",
             f"{result.robust_z_score:.2f}",
             result.severity,
+            impact_label,
         )
 
     console.print(table)
 
-    console.print()
-    console.print("[bold]Propagation Analysis[/bold]")
+    console.print(f"\nOverall Severity: [bold]{analysis.overall_severity}[/bold]")
 
-    if not propagation_results:
-        console.print("No propagation detected.")
-        return
+    if analysis.primary_origin:
+        console.print(f"Primary Origin: [bold]{analysis.primary_origin.task_id}[/bold]")
+        console.print(f"Reason: [bold]{analysis.primary_origin.classification}[/bold]")
+        console.print(f"Severity: [bold]{analysis.primary_origin.severity}[/bold]")
+        console.print(
+            f"Propagation Score: {analysis.primary_origin.propagation_score:.2f}"
+        )
 
-    for propagation in propagation_results:
-        console.print()
-        console.print(f"Origin: [bold]{propagation.origin_task}[/bold]")
+    if analysis.propagation_results:
+        console.print("\n[bold]Propagation Analysis[/bold]\n")
 
-        console.print("Path: " + " -> ".join(propagation.path))
-
-        console.print(f"Propagation Score: {propagation.propagation_score:.2f}")
-
-
-if __name__ == "__main__":
-    app()
+        for result in analysis.propagation_results:
+            console.print(f"Origin: {result.origin_task}")
+            console.print(f"Path: {' -> '.join(result.path)}")
+            console.print(f"Propagation Score: {result.propagation_score:.2f}")
