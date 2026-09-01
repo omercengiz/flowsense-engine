@@ -135,6 +135,11 @@ Then run:
 flowsense analyze <dag_id>
 ```
 
+The CLI report includes a DAG summary and separate tables for task drift,
+handoff drift, change points, trends, propagation paths, and diagnostics.
+Results are ordered by severity or subject so repeated analyses remain easy to
+compare.
+
 ## Library API
 
 FlowSense can also be used as a Python library through its supported top-level
@@ -283,7 +288,6 @@ The current implementation should be considered experimental and is not yet inte
 Planned areas include:
 
 - DAG-level analysis models
-- richer CLI reporting
 - broader Airflow compatibility testing
 
 ## License
