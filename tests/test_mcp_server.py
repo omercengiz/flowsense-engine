@@ -9,7 +9,7 @@ from flowsense.engine.drift import DriftResult
 from flowsense.engine.impact import TaskImpact
 from flowsense.engine.root_cause import RootCauseResult
 from flowsense.mcp.server import serialize_analysis
-from flowsense.models import DAGAnalysis
+from flowsense.models import AnalysisDiagnostic, DAGAnalysis
 
 
 @pytest.fixture
@@ -95,6 +95,13 @@ def test_serialize_analysis() -> None:
         dependencies={
             "transform": [],
         },
+        diagnostics=[
+            AnalysisDiagnostic(
+                code="INSUFFICIENT_TASK_HISTORY",
+                subject_id="load",
+                message="load requires at least 5 runs.",
+            )
+        ],
     )
 
     result = serialize_analysis(analysis)
@@ -134,3 +141,10 @@ def test_serialize_analysis() -> None:
     assert result["dependencies"] == {
         "transform": [],
     }
+    assert result["diagnostics"] == [
+        {
+            "code": "INSUFFICIENT_TASK_HISTORY",
+            "subject_id": "load",
+            "message": "load requires at least 5 runs.",
+        }
+    ]

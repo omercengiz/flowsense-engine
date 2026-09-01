@@ -85,3 +85,44 @@ def test_build_duration_history_ignores_missing_duration() -> None:
     history = build_duration_history(task_runs)
 
     assert history == {}
+
+
+def test_build_duration_history_uses_slowest_mapped_instance_per_run() -> None:
+    task_runs = [
+        TaskRun(
+            dag_id="demo",
+            dag_run_id="run_1",
+            task_id="transform",
+            state="success",
+            duration=2.0,
+            map_index=0,
+        ),
+        TaskRun(
+            dag_id="demo",
+            dag_run_id="run_1",
+            task_id="transform",
+            state="success",
+            duration=5.0,
+            map_index=1,
+        ),
+        TaskRun(
+            dag_id="demo",
+            dag_run_id="run_2",
+            task_id="transform",
+            state="success",
+            duration=4.0,
+            map_index=0,
+        ),
+        TaskRun(
+            dag_id="demo",
+            dag_run_id="run_2",
+            task_id="transform",
+            state="success",
+            duration=3.0,
+            map_index=1,
+        ),
+    ]
+
+    history = build_duration_history(task_runs)
+
+    assert history == {"transform": [5.0, 4.0]}

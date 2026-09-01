@@ -135,6 +135,48 @@ Then run:
 flowsense analyze <dag_id>
 ```
 
+## Library API
+
+FlowSense can also be used as a Python library through its supported top-level
+API:
+
+```python
+from flowsense import AirflowClient, analyze_dag
+
+with AirflowClient() as source:
+    analysis = analyze_dag(
+        dag_id="flowsense_demo",
+        source=source,
+    )
+
+print(analysis.overall_severity)
+print(analysis.primary_origin)
+```
+
+Analysis behavior can be customized with an immutable policy:
+
+```python
+from flowsense import AnalysisPolicy, MappedTaskAggregation
+
+policy = AnalysisPolicy(
+    minimum_history=10,
+    baseline_window=30,
+    medium_threshold=2.5,
+    high_threshold=4.0,
+    critical_threshold=6.0,
+    mapped_task_aggregation=MappedTaskAggregation.MAX,
+)
+```
+
+`baseline_window` limits the number of historical values used before the current
+run. Mapped task durations can be aggregated with `MAX`, `MEAN`, or `SUM`. The
+same policy options are available through the CLI and MCP tool.
+
+Custom data sources can implement the `DAGDataSource` protocol and be passed to
+`analyze_dag`. Names exported directly from `flowsense` form the supported public
+API. Imports from internal packages such as `flowsense.engine` should be treated
+as implementation details and may change before version 1.0.
+
 ## MCP Server
 
 Start the FlowSense MCP server over stdio:
@@ -183,8 +225,8 @@ ruff format .
 
 ```text
 src/flowsense/
-├── cli/
-├── collector/
+├── application/
+├── domain/
 ├── engine/
 │   ├── drift.py
 │   ├── history.py
@@ -192,8 +234,12 @@ src/flowsense/
 │   ├── propagation.py
 │   ├── root_cause.py
 │   └── timing.py
+├── infrastructure/
+│   └── airflow/
+├── cli/
 ├── mcp/
-└── models/
+├── collector/  # backward-compatible imports
+└── models/     # backward-compatible imports
 ```
 
 ## Detection Approach
