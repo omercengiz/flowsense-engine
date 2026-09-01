@@ -5,6 +5,7 @@ import pytest
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
+from flowsense import ChangePointResult
 from flowsense.engine.drift import DriftResult
 from flowsense.engine.impact import TaskImpact
 from flowsense.engine.root_cause import RootCauseResult
@@ -102,6 +103,28 @@ def test_serialize_analysis() -> None:
                 message="load requires at least 5 runs.",
             )
         ],
+        change_point_results={
+            "transform": ChangePointResult(
+                subject_id="transform",
+                change_index=3,
+                before_median=3.0,
+                after_median=6.0,
+                change_percent=100.0,
+                score=5.0,
+                direction="INCREASE",
+            )
+        },
+        handoff_change_point_results={
+            ("extract", "transform"): ChangePointResult(
+                subject_id="extract->transform",
+                change_index=3,
+                before_median=2.0,
+                after_median=4.0,
+                change_percent=100.0,
+                score=5.0,
+                direction="INCREASE",
+            )
+        },
     )
 
     result = serialize_analysis(analysis)
@@ -148,3 +171,19 @@ def test_serialize_analysis() -> None:
             "message": "load requires at least 5 runs.",
         }
     ]
+    assert result["change_point_results"]["transform"] == {
+        "change_index": 3,
+        "before_median": 3.0,
+        "after_median": 6.0,
+        "change_percent": 100.0,
+        "score": 5.0,
+        "direction": "INCREASE",
+    }
+    assert result["handoff_change_point_results"]["extract->transform"] == {
+        "change_index": 3,
+        "before_median": 2.0,
+        "after_median": 4.0,
+        "change_percent": 100.0,
+        "score": 5.0,
+        "direction": "INCREASE",
+    }

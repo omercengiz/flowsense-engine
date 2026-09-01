@@ -24,6 +24,8 @@ def test_top_level_api_declares_supported_exports() -> None:
         "AirflowApiError",
         "AirflowClient",
         "AnalysisPolicy",
+        "ChangeDirection",
+        "ChangePointResult",
         "DAGAnalysis",
         "DAGDataSource",
         "Severity",

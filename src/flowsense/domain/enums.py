@@ -21,6 +21,11 @@ class MappedTaskAggregation(StrEnum):
     SUM = "SUM"
 
 
+class ChangeDirection(StrEnum):
+    INCREASE = "INCREASE"
+    DECREASE = "DECREASE"
+
+
 SEVERITY_SCORE: dict[Severity, int] = {
     Severity.NORMAL: 0,
     Severity.MEDIUM: 1,

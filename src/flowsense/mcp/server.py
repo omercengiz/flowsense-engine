@@ -47,6 +47,17 @@ def serialize_analysis(analysis: DAGAnalysis) -> dict:
             }
             for task_id, result in analysis.drift_results.items()
         },
+        "change_point_results": {
+            task_id: {
+                "change_index": result.change_index,
+                "before_median": result.before_median,
+                "after_median": result.after_median,
+                "change_percent": result.change_percent,
+                "score": result.score,
+                "direction": result.direction,
+            }
+            for task_id, result in analysis.change_point_results.items()
+        },
         "handoff_drift_results": {
             f"{upstream}->{downstream}": {
                 "baseline": result.baseline,
@@ -60,6 +71,20 @@ def serialize_analysis(analysis: DAGAnalysis) -> dict:
                 upstream,
                 downstream,
             ), result in analysis.handoff_drift_results.items()
+        },
+        "handoff_change_point_results": {
+            f"{upstream}->{downstream}": {
+                "change_index": result.change_index,
+                "before_median": result.before_median,
+                "after_median": result.after_median,
+                "change_percent": result.change_percent,
+                "score": result.score,
+                "direction": result.direction,
+            }
+            for (
+                upstream,
+                downstream,
+            ), result in analysis.handoff_change_point_results.items()
         },
         "task_impacts": {
             task_id: {

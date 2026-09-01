@@ -4,6 +4,8 @@ from flowsense.domain import TaskRun
 
 
 class DAGDataSource(Protocol):
-    def collect_task_runs(self, dag_id: str) -> list[TaskRun]: ...
+    def collect_task_runs(self, dag_id: str) -> list[TaskRun]:
+        """Return task runs ordered from oldest DAG run to newest."""
+        ...
 
     def get_dag_dependencies(self, dag_id: str) -> dict[str, list[str]]: ...
