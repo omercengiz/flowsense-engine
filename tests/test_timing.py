@@ -143,6 +143,55 @@ def test_build_handoff_history() -> None:
     }
 
 
+def test_build_handoff_history_aggregates_mapped_task_boundaries() -> None:
+    base_time = datetime(2026, 8, 20, 10, 0, tzinfo=UTC)
+
+    task_runs = [
+        TaskRun(
+            dag_id="demo",
+            dag_run_id="run_1",
+            task_id="extract",
+            state="success",
+            end_date=base_time + timedelta(seconds=10),
+            map_index=0,
+        ),
+        TaskRun(
+            dag_id="demo",
+            dag_run_id="run_1",
+            task_id="extract",
+            state="success",
+            end_date=base_time + timedelta(seconds=5),
+            map_index=1,
+        ),
+        TaskRun(
+            dag_id="demo",
+            dag_run_id="run_1",
+            task_id="transform",
+            state="success",
+            start_date=base_time + timedelta(seconds=12),
+            map_index=0,
+        ),
+        TaskRun(
+            dag_id="demo",
+            dag_run_id="run_1",
+            task_id="transform",
+            state="success",
+            start_date=base_time + timedelta(seconds=20),
+            map_index=1,
+        ),
+    ]
+
+    history = build_handoff_history(
+        task_runs=task_runs,
+        dependencies={
+            "extract": ["transform"],
+            "transform": [],
+        },
+    )
+
+    assert history == {("extract", "transform"): [2.0]}
+
+
 def test_calculate_handoff_drift_detects_anomaly() -> None:
     result = calculate_handoff_drift(
         upstream_task="extract",

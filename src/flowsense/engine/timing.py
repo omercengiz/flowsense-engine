@@ -41,25 +41,49 @@ def build_handoff_history(
     task_runs: list[TaskRun],
     dependencies: dict[str, list[str]],
 ) -> dict[tuple[str, str], list[float]]:
-    runs_by_id: dict[str, dict[str, TaskRun]] = {}
+    """Build logical-edge history across regular and dynamically mapped tasks.
+
+    A mapped upstream is complete at its latest instance end, while a mapped
+    downstream starts at its earliest instance start.
+    """
+    runs_by_id: dict[str, dict[str, list[TaskRun]]] = {}
 
     for task_run in task_runs:
-        runs_by_id.setdefault(task_run.dag_run_id, {})[task_run.task_id] = task_run
+        tasks_in_run = runs_by_id.setdefault(task_run.dag_run_id, {})
+        tasks_in_run.setdefault(task_run.task_id, []).append(task_run)
 
     history: dict[tuple[str, str], list[float]] = {}
 
     for tasks_in_run in runs_by_id.values():
         for upstream_task, downstream_tasks in dependencies.items():
-            upstream_run = tasks_in_run.get(upstream_task)
+            upstream_runs = tasks_in_run.get(upstream_task, [])
+            upstream_runs_with_end = [
+                task_run for task_run in upstream_runs if task_run.end_date is not None
+            ]
 
-            if upstream_run is None:
+            if not upstream_runs_with_end:
                 continue
 
-            for downstream_task in downstream_tasks:
-                downstream_run = tasks_in_run.get(downstream_task)
+            upstream_run = max(
+                upstream_runs_with_end,
+                key=lambda task_run: task_run.end_date,
+            )
 
-                if downstream_run is None:
+            for downstream_task in downstream_tasks:
+                downstream_runs = tasks_in_run.get(downstream_task, [])
+                downstream_runs_with_start = [
+                    task_run
+                    for task_run in downstream_runs
+                    if task_run.start_date is not None
+                ]
+
+                if not downstream_runs_with_start:
                     continue
+
+                downstream_run = min(
+                    downstream_runs_with_start,
+                    key=lambda task_run: task_run.start_date,
+                )
 
                 try:
                     timing = calculate_handoff_delay(

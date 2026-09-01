@@ -8,10 +8,22 @@ from flowsense.models import TaskRun
 def build_duration_history(
     task_runs: list[TaskRun],
 ) -> dict[str, list[float]]:
-    history: dict[str, list[float]] = defaultdict(list)
+    """Build logical-task history using the slowest mapped instance per DAG run."""
+    durations_by_run_and_task: dict[tuple[str, str], float] = {}
 
     for task_run in task_runs:
-        if task_run.state == "success" and task_run.duration is not None:
-            history[task_run.task_id].append(task_run.duration)
+        if task_run.state != "success" or task_run.duration is None:
+            continue
+
+        key = (task_run.dag_run_id, task_run.task_id)
+        current_duration = durations_by_run_and_task.get(key)
+
+        if current_duration is None or task_run.duration > current_duration:
+            durations_by_run_and_task[key] = task_run.duration
+
+    history: dict[str, list[float]] = defaultdict(list)
+
+    for (_dag_run_id, task_id), duration in durations_by_run_and_task.items():
+        history[task_id].append(duration)
 
     return dict(history)
