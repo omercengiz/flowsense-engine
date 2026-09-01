@@ -230,3 +230,52 @@ def test_prefers_higher_propagation_score_between_independent_roots() -> None:
     assert result is not None
     assert result.task_id == "extract_b"
     assert result.propagation_score == 0.8
+
+
+def test_treats_candidate_after_normal_dependency_gap_as_independent() -> None:
+    drift_results = {
+        "upstream": _drift(
+            "upstream",
+            "HIGH",
+        ),
+        "normal_bridge": _drift(
+            "normal_bridge",
+            "NORMAL",
+        ),
+        "independent_origin": _drift(
+            "independent_origin",
+            "CRITICAL",
+        ),
+    }
+
+    task_impacts = {
+        "upstream": _impact(
+            "upstream",
+            "OWN_DRIFT",
+            "HIGH",
+        ),
+        "normal_bridge": _impact(
+            "normal_bridge",
+            "NORMAL",
+            "NORMAL",
+        ),
+        "independent_origin": _impact(
+            "independent_origin",
+            "OWN_DRIFT",
+            "CRITICAL",
+        ),
+    }
+
+    result = select_primary_origin(
+        drift_results=drift_results,
+        task_impacts=task_impacts,
+        dependencies={
+            "upstream": ["normal_bridge"],
+            "normal_bridge": ["independent_origin"],
+            "independent_origin": [],
+        },
+        propagation_results=[],
+    )
+
+    assert result is not None
+    assert result.task_id == "independent_origin"
