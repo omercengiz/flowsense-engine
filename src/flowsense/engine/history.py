@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from flowsense.models import TaskRun
+from flowsense.domain import TaskRun
 
 
 def build_duration_history(

@@ -1,23 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-
-from flowsense.engine.drift import DriftResult
-
-SEVERITY_SCORE = {
-    "NORMAL": 0,
-    "MEDIUM": 1,
-    "HIGH": 2,
-    "CRITICAL": 3,
-}
-
-
-@dataclass
-class PropagationResult:
-    origin_task: str
-    affected_tasks: list[str]
-    path: list[str]
-    propagation_score: float
+from flowsense.domain import DriftResult, PropagationResult, Severity
+from flowsense.domain.enums import SEVERITY_SCORE
 
 
 def _build_reverse_dependencies(
@@ -51,12 +35,12 @@ def _has_anomalous_upstream(
     for upstream_task in reverse_dependencies.get(task_id, []):
         upstream_drift = drift_results.get(upstream_task)
 
-        if upstream_drift is None or upstream_drift.severity == "NORMAL":
+        if upstream_drift is None or upstream_drift.severity == Severity.NORMAL:
             continue
 
         if upstream_drift.severity in {
-            "HIGH",
-            "CRITICAL",
+            Severity.HIGH,
+            Severity.CRITICAL,
         }:
             return True
 
@@ -90,7 +74,7 @@ def _find_propagation_paths(
         if downstream_drift is None:
             continue
 
-        if downstream_drift.severity == "NORMAL":
+        if downstream_drift.severity == Severity.NORMAL:
             continue
 
         next_path = [*path, downstream_task]
@@ -122,7 +106,7 @@ def analyze_propagation(
     reverse_dependencies = _build_reverse_dependencies(dependencies)
 
     for task_id, drift in drift_results.items():
-        if drift.severity not in {"HIGH", "CRITICAL"}:
+        if drift.severity not in {Severity.HIGH, Severity.CRITICAL}:
             continue
 
         if _has_anomalous_upstream(

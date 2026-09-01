@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from flowsense.collector.airflow_client import AirflowClient
+from flowsense.domain import AnalysisDiagnostic, DAGAnalysis, Severity
+from flowsense.domain.enums import SEVERITY_SCORE
 from flowsense.engine.drift import calculate_drift
 from flowsense.engine.history import build_duration_history
 from flowsense.engine.impact import classify_task_impact
@@ -10,7 +12,6 @@ from flowsense.engine.timing import (
     build_handoff_history_with_diagnostics,
     calculate_handoff_drift,
 )
-from flowsense.models import AnalysisDiagnostic, DAGAnalysis
 
 
 def analyze_dag(dag_id: str) -> DAGAnalysis:
@@ -97,14 +98,7 @@ def analyze_dag(dag_id: str) -> DAGAnalysis:
         dependencies=dependencies,
     )
 
-    severity_order = {
-        "NORMAL": 0,
-        "MEDIUM": 1,
-        "HIGH": 2,
-        "CRITICAL": 3,
-    }
-
-    overall_severity = "NORMAL"
+    overall_severity = Severity.NORMAL
 
     all_drift_results = [
         *drift_results.values(),
@@ -114,7 +108,7 @@ def analyze_dag(dag_id: str) -> DAGAnalysis:
     if all_drift_results:
         overall_severity = max(
             all_drift_results,
-            key=lambda result: severity_order[result.severity],
+            key=lambda result: SEVERITY_SCORE[result.severity],
         ).severity
 
     primary_origin = select_primary_origin(

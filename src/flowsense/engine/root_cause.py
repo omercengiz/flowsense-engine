@@ -1,26 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-
-from flowsense.engine.drift import DriftResult
-from flowsense.engine.impact import TaskImpact
-from flowsense.engine.propagation import PropagationResult
-
-
-@dataclass
-class RootCauseResult:
-    task_id: str
-    classification: str
-    severity: str
-    propagation_score: float
-
-
-SEVERITY_SCORE = {
-    "NORMAL": 0,
-    "MEDIUM": 1,
-    "HIGH": 2,
-    "CRITICAL": 3,
-}
+from flowsense.domain import (
+    DriftResult,
+    ImpactClassification,
+    PropagationResult,
+    RootCauseResult,
+    Severity,
+    TaskImpact,
+)
+from flowsense.domain.enums import SEVERITY_SCORE
 
 
 def _build_reverse_dependencies(
@@ -58,7 +46,7 @@ def _has_candidate_upstream(
     for upstream_task in reverse_dependencies.get(task_id, []):
         upstream_drift = drift_results.get(upstream_task)
 
-        if upstream_drift is None or upstream_drift.severity == "NORMAL":
+        if upstream_drift is None or upstream_drift.severity == Severity.NORMAL:
             continue
 
         if upstream_task in candidate_tasks:
@@ -87,8 +75,8 @@ def select_primary_origin(
         for task_id, impact in task_impacts.items()
         if impact.classification
         in {
-            "OWN_DRIFT",
-            "COMBINED",
+            ImpactClassification.OWN_DRIFT,
+            ImpactClassification.COMBINED,
         }
     }
 

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from mcp.server import MCPServer
 
+from flowsense.domain import DAGAnalysis
 from flowsense.engine.analyzer import analyze_dag
-from flowsense.models import DAGAnalysis
 
 mcp = MCPServer("FlowSense Engine")
 

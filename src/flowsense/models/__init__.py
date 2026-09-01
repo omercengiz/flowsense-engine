@@ -1,5 +1,4 @@
-from flowsense.models.dag_analysis import AnalysisDiagnostic, DAGAnalysis
-from flowsense.models.task_run import TaskRun
+from flowsense.domain import AnalysisDiagnostic, DAGAnalysis, TaskRun
 
 __all__ = [
     "AnalysisDiagnostic",

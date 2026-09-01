@@ -1,20 +1,10 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
 
 import numpy as np
 
-
-@dataclass
-class DriftResult:
-    task_id: str
-    baseline: float
-    current: float
-    mad: float
-    robust_z_score: float
-    deviation_percent: float
-    severity: str
+from flowsense.domain import DriftResult, Severity
 
 
 def calculate_drift(
@@ -53,13 +43,13 @@ def calculate_drift(
     absolute_z = abs(robust_z_score)
 
     if absolute_z >= 5:
-        severity = "CRITICAL"
+        severity = Severity.CRITICAL
     elif absolute_z >= 3.5:
-        severity = "HIGH"
+        severity = Severity.HIGH
     elif absolute_z >= 2:
-        severity = "MEDIUM"
+        severity = Severity.MEDIUM
     else:
-        severity = "NORMAL"
+        severity = Severity.NORMAL
 
     return DriftResult(
         task_id=task_id,

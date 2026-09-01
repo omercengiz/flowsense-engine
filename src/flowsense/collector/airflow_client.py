@@ -3,7 +3,7 @@ from __future__ import annotations
 import httpx
 
 from flowsense.config import get_airflow_config
-from flowsense.models import TaskRun
+from flowsense.domain import TaskRun
 
 PAGE_SIZE = 100
 

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from flowsense.engine.drift import DriftResult, calculate_drift
-from flowsense.models import TaskRun
+from flowsense.domain import DriftResult, TaskRun
+from flowsense.engine.drift import calculate_drift
 
 
 @dataclass
