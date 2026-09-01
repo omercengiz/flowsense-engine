@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, call, patch
 
+import httpx
 import pytest
 
 from flowsense.config import AirflowConfig
@@ -7,7 +8,12 @@ from flowsense.infrastructure.airflow.client import PAGE_SIZE, AirflowClient
 
 
 @pytest.fixture
-def client() -> AirflowClient:
+def http_client() -> MagicMock:
+    return MagicMock(spec=httpx.Client)
+
+
+@pytest.fixture
+def client(http_client: MagicMock) -> AirflowClient:
     with patch(
         "flowsense.infrastructure.airflow.client.get_airflow_config",
         return_value=AirflowConfig(
@@ -16,16 +22,15 @@ def client() -> AirflowClient:
             password="airflow",
         ),
     ):
-        airflow_client = AirflowClient()
+        airflow_client = AirflowClient(http_client=http_client)
 
     airflow_client._token = "token"
     return airflow_client
 
 
-@patch("flowsense.infrastructure.airflow.client.httpx.get")
 def test_get_dag_runs_collects_all_pages(
-    mock_get: MagicMock,
     client: AirflowClient,
+    http_client: MagicMock,
 ) -> None:
     first_page = MagicMock()
     first_page.json.return_value = {
@@ -39,13 +44,13 @@ def test_get_dag_runs_collects_all_pages(
         "total_entries": PAGE_SIZE + 1,
     }
 
-    mock_get.side_effect = [first_page, second_page]
+    http_client.get.side_effect = [first_page, second_page]
 
     result = client.get_dag_runs("demo")
 
     assert len(result["dag_runs"]) == PAGE_SIZE + 1
     assert result["total_entries"] == PAGE_SIZE + 1
-    assert mock_get.call_args_list == [
+    assert http_client.get.call_args_list == [
         call(
             "http://airflow.test/api/v2/dags/demo/dagRuns",
             headers={
@@ -53,7 +58,6 @@ def test_get_dag_runs_collects_all_pages(
                 "Accept": "application/json",
             },
             params={"limit": PAGE_SIZE, "offset": 0},
-            timeout=10.0,
         ),
         call(
             "http://airflow.test/api/v2/dags/demo/dagRuns",
@@ -62,7 +66,6 @@ def test_get_dag_runs_collects_all_pages(
                 "Accept": "application/json",
             },
             params={"limit": PAGE_SIZE, "offset": PAGE_SIZE},
-            timeout=10.0,
         ),
     ]
 
@@ -87,31 +90,38 @@ def test_get_dag_runs_collects_all_pages(
         ),
     ],
 )
-@patch("flowsense.infrastructure.airflow.client.httpx.get")
 def test_paginated_endpoints_use_their_collection_key(
-    mock_get: MagicMock,
     method_name: str,
     collection_key: str,
     expected_url: str,
     args: tuple[str, ...],
     client: AirflowClient,
+    http_client: MagicMock,
 ) -> None:
     response = MagicMock()
     response.json.return_value = {
         collection_key: [{"id": "item_1"}],
         "total_entries": 1,
     }
-    mock_get.return_value = response
+    http_client.get.return_value = response
 
     result = getattr(client, method_name)(*args)
 
     assert result[collection_key] == [{"id": "item_1"}]
-    mock_get.assert_called_once_with(
+    http_client.get.assert_called_once_with(
         expected_url,
         headers={
             "Authorization": "Bearer token",
             "Accept": "application/json",
         },
         params={"limit": PAGE_SIZE, "offset": 0},
-        timeout=10.0,
     )
+
+
+def test_does_not_close_injected_http_client(
+    client: AirflowClient,
+    http_client: MagicMock,
+) -> None:
+    client.close()
+
+    http_client.close.assert_not_called()

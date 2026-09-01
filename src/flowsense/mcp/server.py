@@ -3,8 +3,8 @@ from __future__ import annotations
 from mcp.server import MCPServer
 
 from flowsense.application import analyze_dag
-from flowsense.collector.airflow_client import AirflowClient
 from flowsense.domain import DAGAnalysis
+from flowsense.infrastructure.airflow import AirflowClient
 
 mcp = MCPServer("FlowSense Engine")
 
@@ -81,10 +81,11 @@ def serialize_analysis(analysis: DAGAnalysis) -> dict:
 @mcp.tool()
 def analyze_airflow_dag(dag_id: str) -> dict:
     """Analyze an Apache Airflow DAG for temporal drift and propagation."""
-    analysis = analyze_dag(
-        dag_id=dag_id,
-        source=AirflowClient(),
-    )
+    with AirflowClient() as source:
+        analysis = analyze_dag(
+            dag_id=dag_id,
+            source=source,
+        )
     return serialize_analysis(analysis)
 
 

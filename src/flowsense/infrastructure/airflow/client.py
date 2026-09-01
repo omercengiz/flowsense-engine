@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Self
+
 import httpx
 
 from flowsense.config import get_airflow_config
@@ -23,25 +25,37 @@ class AirflowClient:
         base_url: str | None = None,
         username: str | None = None,
         password: str | None = None,
+        http_client: httpx.Client | None = None,
     ):
         config = get_airflow_config()
 
         self.base_url = (base_url or config.base_url).rstrip("/")
         self.username = username or config.username
         self.password = password or config.password
+        self._owns_http_client = http_client is None
+        self._http_client = http_client or httpx.Client(timeout=10.0)
         self._token: str | None = None
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        self.close()
+
+    def close(self) -> None:
+        if self._owns_http_client:
+            self._http_client.close()
 
     def _get_token(self) -> str:
         if self._token:
             return self._token
 
-        response = httpx.post(
+        response = self._http_client.post(
             f"{self.base_url}/auth/token",
             json={
                 "username": self.username,
                 "password": self.password,
             },
-            timeout=10.0,
         )
         response.raise_for_status()
 
@@ -64,11 +78,10 @@ class AirflowClient:
         last_page: dict = {}
 
         while True:
-            response = httpx.get(
+            response = self._http_client.get(
                 url,
                 headers=self._headers(),
                 params={"limit": PAGE_SIZE, "offset": offset},
-                timeout=10.0,
             )
             response.raise_for_status()
 
