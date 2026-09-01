@@ -1,15 +1,12 @@
 from datetime import UTC, datetime, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-from flowsense.engine.analyzer import analyze_dag
+from flowsense.application import DAGDataSource, analyze_dag
 from flowsense.models import TaskRun
 
 
-@patch("flowsense.engine.analyzer.AirflowClient")
-def test_analyze_dag_identifies_primary_origin(
-    mock_client_class: MagicMock,
-) -> None:
-    client = mock_client_class.return_value
+def test_analyze_dag_identifies_primary_origin() -> None:
+    client = MagicMock(spec=DAGDataSource)
 
     client.collect_task_runs.return_value = [
         TaskRun(
@@ -42,7 +39,7 @@ def test_analyze_dag_identifies_primary_origin(
         "load": [],
     }
 
-    analysis = analyze_dag("demo")
+    analysis = analyze_dag("demo", client)
 
     assert analysis.overall_severity == "CRITICAL"
     assert analysis.primary_origin is not None
@@ -52,11 +49,8 @@ def test_analyze_dag_identifies_primary_origin(
     assert analysis.propagation_results[0].affected_tasks == ["load"]
 
 
-@patch("flowsense.engine.analyzer.AirflowClient")
-def test_analyze_dag_identifies_isolated_primary_origin(
-    mock_client_class: MagicMock,
-) -> None:
-    client = mock_client_class.return_value
+def test_analyze_dag_identifies_isolated_primary_origin() -> None:
+    client = MagicMock(spec=DAGDataSource)
 
     client.collect_task_runs.return_value = [
         TaskRun(
@@ -76,18 +70,15 @@ def test_analyze_dag_identifies_isolated_primary_origin(
         "transform": [],
     }
 
-    analysis = analyze_dag("demo")
+    analysis = analyze_dag("demo", client)
 
     assert analysis.propagation_results == []
     assert analysis.primary_origin is not None
     assert analysis.primary_origin.task_id == "transform"
 
 
-@patch("flowsense.engine.analyzer.AirflowClient")
-def test_analyze_dag_calculates_handoff_drift(
-    mock_client_class: MagicMock,
-) -> None:
-    client = mock_client_class.return_value
+def test_analyze_dag_calculates_handoff_drift() -> None:
+    client = MagicMock(spec=DAGDataSource)
 
     base_time = datetime(
         2026,
@@ -150,7 +141,7 @@ def test_analyze_dag_calculates_handoff_drift(
         "transform": [],
     }
 
-    analysis = analyze_dag("demo")
+    analysis = analyze_dag("demo", client)
 
     edge = ("extract", "transform")
 
@@ -163,11 +154,8 @@ def test_analyze_dag_calculates_handoff_drift(
     assert handoff_drift.severity == "CRITICAL"
 
 
-@patch("flowsense.engine.analyzer.AirflowClient")
-def test_analyze_dag_uses_handoff_for_overall_severity(
-    mock_client_class: MagicMock,
-) -> None:
-    client = mock_client_class.return_value
+def test_analyze_dag_uses_handoff_for_overall_severity() -> None:
+    client = MagicMock(spec=DAGDataSource)
 
     base_time = datetime(
         2026,
@@ -230,7 +218,7 @@ def test_analyze_dag_uses_handoff_for_overall_severity(
         "transform": [],
     }
 
-    analysis = analyze_dag("demo")
+    analysis = analyze_dag("demo", client)
 
     assert analysis.drift_results["extract"].severity == "NORMAL"
     assert analysis.drift_results["transform"].severity == "NORMAL"
@@ -242,11 +230,8 @@ def test_analyze_dag_uses_handoff_for_overall_severity(
     assert analysis.overall_severity == "CRITICAL"
 
 
-@patch("flowsense.engine.analyzer.AirflowClient")
-def test_analyze_dag_reports_insufficient_history_diagnostics(
-    mock_client_class: MagicMock,
-) -> None:
-    client = mock_client_class.return_value
+def test_analyze_dag_reports_insufficient_history_diagnostics() -> None:
+    client = MagicMock(spec=DAGDataSource)
     base_time = datetime(2026, 8, 20, 10, 0, tzinfo=UTC)
     task_runs = []
 
@@ -281,7 +266,7 @@ def test_analyze_dag_reports_insufficient_history_diagnostics(
         "transform": [],
     }
 
-    analysis = analyze_dag("demo")
+    analysis = analyze_dag("demo", client)
 
     diagnostics = {
         (diagnostic.code, diagnostic.subject_id) for diagnostic in analysis.diagnostics
@@ -294,11 +279,8 @@ def test_analyze_dag_reports_insufficient_history_diagnostics(
     }
 
 
-@patch("flowsense.engine.analyzer.AirflowClient")
-def test_analyze_dag_reports_missing_handoff_timestamp(
-    mock_client_class: MagicMock,
-) -> None:
-    client = mock_client_class.return_value
+def test_analyze_dag_reports_missing_handoff_timestamp() -> None:
+    client = MagicMock(spec=DAGDataSource)
     client.collect_task_runs.return_value = [
         TaskRun(
             dag_id="demo",
@@ -320,7 +302,7 @@ def test_analyze_dag_reports_missing_handoff_timestamp(
         "transform": [],
     }
 
-    analysis = analyze_dag("demo")
+    analysis = analyze_dag("demo", client)
 
     assert any(
         diagnostic.code == "MISSING_UPSTREAM_END_DATE"

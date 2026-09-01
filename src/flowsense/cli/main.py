@@ -4,7 +4,8 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from flowsense.engine.analyzer import analyze_dag
+from flowsense.application import analyze_dag
+from flowsense.collector.airflow_client import AirflowClient
 
 app = typer.Typer(
     name="flowsense",
@@ -27,7 +28,10 @@ def analyze(
         help="Airflow DAG id to analyze.",
     ),
 ) -> None:
-    analysis = analyze_dag(dag_id)
+    analysis = analyze_dag(
+        dag_id=dag_id,
+        source=AirflowClient(),
+    )
 
     console.print(f"\n[bold]FlowSense Analysis — {analysis.dag_id}[/bold]\n")
 
