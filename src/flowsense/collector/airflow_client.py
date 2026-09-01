@@ -5,6 +5,8 @@ import httpx
 from flowsense.config import get_airflow_config
 from flowsense.models import TaskRun
 
+PAGE_SIZE = 100
+
 
 class AirflowClient:
     def __init__(
@@ -50,18 +52,58 @@ class AirflowClient:
             "Accept": "application/json",
         }
 
+    def _get_paginated(
+        self,
+        url: str,
+        collection_key: str,
+    ) -> dict:
+        items: list[dict] = []
+        offset = 0
+        last_page: dict = {}
+
+        while True:
+            response = httpx.get(
+                url,
+                headers=self._headers(),
+                params={
+                    "limit": PAGE_SIZE,
+                    "offset": offset,
+                },
+                timeout=10.0,
+            )
+
+            response.raise_for_status()
+
+            last_page = response.json()
+            page_items = last_page[collection_key]
+            items.extend(page_items)
+
+            total_entries = last_page.get("total_entries")
+
+            if not page_items:
+                break
+
+            if total_entries is not None and len(items) >= total_entries:
+                break
+
+            if total_entries is None and len(page_items) < PAGE_SIZE:
+                break
+
+            offset += len(page_items)
+
+        return {
+            **last_page,
+            collection_key: items,
+            "total_entries": last_page.get("total_entries", len(items)),
+        }
+
     def get_dag_runs(self, dag_id: str) -> dict:
         url = f"{self.base_url}/api/v2/dags/{dag_id}/dagRuns"
 
-        response = httpx.get(
-            url,
-            headers=self._headers(),
-            timeout=10.0,
+        return self._get_paginated(
+            url=url,
+            collection_key="dag_runs",
         )
-
-        response.raise_for_status()
-
-        return response.json()
 
     def get_task_instances(
         self,
@@ -70,15 +112,10 @@ class AirflowClient:
     ) -> dict:
         url = f"{self.base_url}/api/v2/dags/{dag_id}/dagRuns/{dag_run_id}/taskInstances"
 
-        response = httpx.get(
-            url,
-            headers=self._headers(),
-            timeout=10.0,
+        return self._get_paginated(
+            url=url,
+            collection_key="task_instances",
         )
-
-        response.raise_for_status()
-
-        return response.json()
 
     def collect_task_runs(
         self,
@@ -130,15 +167,10 @@ class AirflowClient:
     ) -> dict:
         url = f"{self.base_url}/api/v2/dags/{dag_id}/tasks"
 
-        response = httpx.get(
-            url,
-            headers=self._headers(),
-            timeout=10.0,
+        return self._get_paginated(
+            url=url,
+            collection_key="tasks",
         )
-
-        response.raise_for_status()
-
-        return response.json()
 
     def get_dag_dependencies(
         self,
