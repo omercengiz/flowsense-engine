@@ -5,7 +5,7 @@ from rich.console import Console
 from rich.table import Table
 
 from flowsense.application import analyze_dag
-from flowsense.infrastructure.airflow import AirflowClient
+from flowsense.infrastructure.airflow import AirflowApiError, AirflowClient
 
 app = typer.Typer(
     name="flowsense",
@@ -28,11 +28,15 @@ def analyze(
         help="Airflow DAG id to analyze.",
     ),
 ) -> None:
-    with AirflowClient() as source:
-        analysis = analyze_dag(
-            dag_id=dag_id,
-            source=source,
-        )
+    try:
+        with AirflowClient() as source:
+            analysis = analyze_dag(
+                dag_id=dag_id,
+                source=source,
+            )
+    except AirflowApiError as exc:
+        console.print(f"[bold red]Airflow request failed:[/bold red] {exc}")
+        raise typer.Exit(code=1) from exc
 
     console.print(f"\n[bold]FlowSense Analysis — {analysis.dag_id}[/bold]\n")
 

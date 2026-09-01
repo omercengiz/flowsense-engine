@@ -4,6 +4,7 @@ import httpx
 import pytest
 
 from flowsense.config import AirflowConfig
+from flowsense.infrastructure.airflow import AirflowApiError
 from flowsense.infrastructure.airflow.client import PAGE_SIZE, AirflowClient
 
 
@@ -44,15 +45,16 @@ def test_get_dag_runs_collects_all_pages(
         "total_entries": PAGE_SIZE + 1,
     }
 
-    http_client.get.side_effect = [first_page, second_page]
+    http_client.request.side_effect = [first_page, second_page]
 
     result = client.get_dag_runs("demo")
 
     assert len(result["dag_runs"]) == PAGE_SIZE + 1
     assert result["total_entries"] == PAGE_SIZE + 1
-    assert http_client.get.call_args_list == [
+    assert http_client.request.call_args_list == [
         call(
-            "http://airflow.test/api/v2/dags/demo/dagRuns",
+            method="GET",
+            url="http://airflow.test/api/v2/dags/demo/dagRuns",
             headers={
                 "Authorization": "Bearer token",
                 "Accept": "application/json",
@@ -60,7 +62,8 @@ def test_get_dag_runs_collects_all_pages(
             params={"limit": PAGE_SIZE, "offset": 0},
         ),
         call(
-            "http://airflow.test/api/v2/dags/demo/dagRuns",
+            method="GET",
+            url="http://airflow.test/api/v2/dags/demo/dagRuns",
             headers={
                 "Authorization": "Bearer token",
                 "Accept": "application/json",
@@ -103,13 +106,14 @@ def test_paginated_endpoints_use_their_collection_key(
         collection_key: [{"id": "item_1"}],
         "total_entries": 1,
     }
-    http_client.get.return_value = response
+    http_client.request.return_value = response
 
     result = getattr(client, method_name)(*args)
 
     assert result[collection_key] == [{"id": "item_1"}]
-    http_client.get.assert_called_once_with(
-        expected_url,
+    http_client.request.assert_called_once_with(
+        method="GET",
+        url=expected_url,
         headers={
             "Authorization": "Bearer token",
             "Accept": "application/json",
@@ -125,3 +129,26 @@ def test_does_not_close_injected_http_client(
     client.close()
 
     http_client.close.assert_not_called()
+
+
+def test_wraps_http_status_errors_without_response_body(
+    client: AirflowClient,
+    http_client: MagicMock,
+) -> None:
+    request = httpx.Request(
+        "GET",
+        "http://airflow.test/api/v2/dags/demo/dagRuns",
+    )
+    http_client.request.return_value = httpx.Response(
+        status_code=503,
+        request=request,
+        text="internal server details",
+    )
+
+    with pytest.raises(AirflowApiError) as exc_info:
+        client.get_dag_runs("demo")
+
+    assert exc_info.value.method == "GET"
+    assert exc_info.value.endpoint == "/api/v2/dags/demo/dagRuns"
+    assert exc_info.value.status_code == 503
+    assert "internal server details" not in str(exc_info.value)

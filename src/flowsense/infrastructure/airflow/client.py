@@ -11,6 +11,7 @@ from flowsense.infrastructure.airflow.dto import (
     AirflowTaskDTO,
     AirflowTaskInstanceDTO,
 )
+from flowsense.infrastructure.airflow.exceptions import AirflowApiError
 from flowsense.infrastructure.airflow.mapper import (
     map_dependencies,
     map_task_instance,
@@ -46,18 +47,45 @@ class AirflowClient:
         if self._owns_http_client:
             self._http_client.close()
 
+    def _request(
+        self,
+        method: str,
+        url: str,
+        **kwargs: object,
+    ) -> httpx.Response:
+        try:
+            response = self._http_client.request(
+                method=method,
+                url=url,
+                **kwargs,
+            )
+            response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            raise AirflowApiError(
+                method=method,
+                endpoint=exc.request.url.path,
+                status_code=exc.response.status_code,
+            ) from exc
+        except httpx.RequestError as exc:
+            raise AirflowApiError(
+                method=method,
+                endpoint=exc.request.url.path,
+            ) from exc
+
+        return response
+
     def _get_token(self) -> str:
         if self._token:
             return self._token
 
-        response = self._http_client.post(
-            f"{self.base_url}/auth/token",
+        response = self._request(
+            method="POST",
+            url=f"{self.base_url}/auth/token",
             json={
                 "username": self.username,
                 "password": self.password,
             },
         )
-        response.raise_for_status()
 
         self._token = response.json()["access_token"]
         return self._token
@@ -78,12 +106,12 @@ class AirflowClient:
         last_page: dict = {}
 
         while True:
-            response = self._http_client.get(
-                url,
+            response = self._request(
+                method="GET",
+                url=url,
                 headers=self._headers(),
                 params={"limit": PAGE_SIZE, "offset": offset},
             )
-            response.raise_for_status()
 
             last_page = response.json()
             page_items = last_page[collection_key]
