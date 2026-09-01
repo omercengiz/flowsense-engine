@@ -2,14 +2,14 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-from flowsense.collector.airflow_client import PAGE_SIZE, AirflowClient
 from flowsense.config import AirflowConfig
+from flowsense.infrastructure.airflow.client import PAGE_SIZE, AirflowClient
 
 
 @pytest.fixture
 def client() -> AirflowClient:
     with patch(
-        "flowsense.collector.airflow_client.get_airflow_config",
+        "flowsense.infrastructure.airflow.client.get_airflow_config",
         return_value=AirflowConfig(
             base_url="http://airflow.test",
             username="airflow",
@@ -22,7 +22,7 @@ def client() -> AirflowClient:
     return airflow_client
 
 
-@patch("flowsense.collector.airflow_client.httpx.get")
+@patch("flowsense.infrastructure.airflow.client.httpx.get")
 def test_get_dag_runs_collects_all_pages(
     mock_get: MagicMock,
     client: AirflowClient,
@@ -87,7 +87,7 @@ def test_get_dag_runs_collects_all_pages(
         ),
     ],
 )
-@patch("flowsense.collector.airflow_client.httpx.get")
+@patch("flowsense.infrastructure.airflow.client.httpx.get")
 def test_paginated_endpoints_use_their_collection_key(
     mock_get: MagicMock,
     method_name: str,
