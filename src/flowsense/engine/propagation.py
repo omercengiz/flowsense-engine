@@ -3,6 +3,9 @@ from __future__ import annotations
 from flowsense.domain import DriftResult, PropagationResult, Severity
 from flowsense.domain.enums import SEVERITY_SCORE
 
+_HOP_DECAY = 0.8
+_MAX_SEVERITY_SCORE = max(SEVERITY_SCORE.values())
+
 
 def _build_reverse_dependencies(
     dependencies: dict[str, list[str]],
@@ -97,6 +100,28 @@ def _find_propagation_paths(
     return paths
 
 
+def _calculate_propagation_score(
+    affected_tasks: list[str],
+    drift_results: dict[str, DriftResult],
+) -> float:
+    """Return a bounded, distance-weighted score for a propagation path."""
+    weighted_severity = 0.0
+    total_weight = 0.0
+
+    for hop, task_id in enumerate(affected_tasks):
+        weight = _HOP_DECAY**hop
+        normalized_severity = (
+            SEVERITY_SCORE[drift_results[task_id].severity] / _MAX_SEVERITY_SCORE
+        )
+        weighted_severity += normalized_severity * weight
+        total_weight += weight
+
+    if total_weight == 0.0:
+        return 0.0
+
+    return weighted_severity / total_weight
+
+
 def analyze_propagation(
     drift_results: dict[str, DriftResult],
     dependencies: dict[str, list[str]],
@@ -131,14 +156,9 @@ def analyze_propagation(
             if not affected_tasks:
                 continue
 
-            origin_score = SEVERITY_SCORE[drift.severity]
-
-            downstream_scores = [
-                SEVERITY_SCORE[drift_results[task].severity] for task in affected_tasks
-            ]
-
-            propagation_score = sum(downstream_scores) / (
-                len(downstream_scores) * origin_score
+            propagation_score = _calculate_propagation_score(
+                affected_tasks=affected_tasks,
+                drift_results=drift_results,
             )
 
             results.append(
