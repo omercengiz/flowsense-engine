@@ -51,7 +51,10 @@ def _has_anomalous_upstream(
     for upstream_task in reverse_dependencies.get(task_id, []):
         upstream_drift = drift_results.get(upstream_task)
 
-        if upstream_drift is not None and upstream_drift.severity in {
+        if upstream_drift is None or upstream_drift.severity == "NORMAL":
+            continue
+
+        if upstream_drift.severity in {
             "HIGH",
             "CRITICAL",
         }:

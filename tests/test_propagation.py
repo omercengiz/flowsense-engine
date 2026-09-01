@@ -308,3 +308,60 @@ def test_detects_branching_propagation_paths() -> None:
         "transform_b",
         "load_b",
     ] in paths
+
+
+def test_preserves_origin_after_normal_dependency_gap() -> None:
+    drift_results = {
+        "upstream": DriftResult(
+            task_id="upstream",
+            baseline=1.0,
+            current=4.0,
+            mad=0.2,
+            robust_z_score=6.0,
+            deviation_percent=300.0,
+            severity="CRITICAL",
+        ),
+        "normal_bridge": DriftResult(
+            task_id="normal_bridge",
+            baseline=2.0,
+            current=2.1,
+            mad=0.3,
+            robust_z_score=0.2,
+            deviation_percent=5.0,
+            severity="NORMAL",
+        ),
+        "independent_origin": DriftResult(
+            task_id="independent_origin",
+            baseline=3.0,
+            current=7.0,
+            mad=0.5,
+            robust_z_score=5.4,
+            deviation_percent=133.3,
+            severity="CRITICAL",
+        ),
+        "downstream": DriftResult(
+            task_id="downstream",
+            baseline=1.0,
+            current=1.8,
+            mad=0.2,
+            robust_z_score=2.5,
+            deviation_percent=80.0,
+            severity="MEDIUM",
+        ),
+    }
+
+    dependencies = {
+        "upstream": ["normal_bridge"],
+        "normal_bridge": ["independent_origin"],
+        "independent_origin": ["downstream"],
+        "downstream": [],
+    }
+
+    results = analyze_propagation(
+        drift_results=drift_results,
+        dependencies=dependencies,
+    )
+
+    assert len(results) == 1
+    assert results[0].origin_task == "independent_origin"
+    assert results[0].path == ["independent_origin", "downstream"]
