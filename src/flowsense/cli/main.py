@@ -4,9 +4,9 @@ from typing import Annotated
 
 import typer
 from rich.console import Console
-from rich.table import Table
 
 from flowsense.application import analyze_dag
+from flowsense.cli.report import render_analysis
 from flowsense.domain import AnalysisPolicy, MappedTaskAggregation
 from flowsense.infrastructure.airflow import AirflowApiError, AirflowClient
 
@@ -63,91 +63,4 @@ def analyze(
         console.print(f"[bold red]Airflow request failed:[/bold red] {exc}")
         raise typer.Exit(code=1) from exc
 
-    console.print(f"\n[bold]FlowSense Analysis — {analysis.dag_id}[/bold]\n")
-
-    table = Table()
-
-    table.add_column("Task")
-    table.add_column("Baseline")
-    table.add_column("Current")
-    table.add_column("Deviation")
-    table.add_column("Z-Score")
-    table.add_column("Severity")
-    table.add_column("Impact")
-
-    for task_id, result in analysis.drift_results.items():
-        impact = analysis.task_impacts.get(task_id)
-        impact_label = impact.classification if impact else "-"
-
-        table.add_row(
-            task_id,
-            f"{result.baseline:.2f}s",
-            f"{result.current:.2f}s",
-            f"{result.deviation_percent:+.1f}%",
-            f"{result.robust_z_score:.2f}",
-            result.severity,
-            impact_label,
-        )
-
-    console.print(table)
-
-    console.print(f"\nOverall Severity: [bold]{analysis.overall_severity}[/bold]")
-
-    if analysis.change_point_results or analysis.handoff_change_point_results:
-        console.print("\n[bold]Change Points[/bold]\n")
-
-        for result in [
-            *analysis.change_point_results.values(),
-            *analysis.handoff_change_point_results.values(),
-        ]:
-            change = (
-                f"{result.change_percent:+.1f}%"
-                if result.change_percent is not None
-                else "n/a"
-            )
-            console.print(
-                f"{result.subject_id}: {result.direction} at observation "
-                f"{result.change_index + 1} ({change}, score={result.score:.2f})"
-            )
-
-    if analysis.trend_results or analysis.handoff_trend_results:
-        console.print("\n[bold]Trends[/bold]\n")
-
-        for result in [
-            *analysis.trend_results.values(),
-            *analysis.handoff_trend_results.values(),
-        ]:
-            change = (
-                f"{result.change_percent:+.1f}%"
-                if result.change_percent is not None
-                else "n/a"
-            )
-            console.print(
-                f"{result.subject_id}: {result.direction} "
-                f"({result.slope_per_observation:+.2f}/run, {change}, "
-                f"score={result.score:.2f})"
-            )
-
-    if analysis.primary_origin:
-        console.print(f"Primary Origin: [bold]{analysis.primary_origin.task_id}[/bold]")
-        console.print(f"Reason: [bold]{analysis.primary_origin.classification}[/bold]")
-        console.print(f"Severity: [bold]{analysis.primary_origin.severity}[/bold]")
-        console.print(
-            f"Propagation Score: {analysis.primary_origin.propagation_score:.2f}"
-        )
-
-    if analysis.propagation_results:
-        console.print("\n[bold]Propagation Analysis[/bold]\n")
-
-        for result in analysis.propagation_results:
-            console.print(f"Origin: {result.origin_task}")
-            console.print(f"Path: {' -> '.join(result.path)}")
-            console.print(f"Propagation Score: {result.propagation_score:.2f}")
-
-    if analysis.diagnostics:
-        console.print("\n[bold yellow]Diagnostics[/bold yellow]\n")
-
-        for diagnostic in analysis.diagnostics:
-            console.print(
-                f"[{diagnostic.code}] {diagnostic.subject_id}: {diagnostic.message}"
-            )
+    render_analysis(console, analysis)
