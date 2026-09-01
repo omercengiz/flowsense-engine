@@ -2,8 +2,13 @@ from __future__ import annotations
 
 from mcp.server import MCPServer
 
-from flowsense.engine.analyzer import analyze_dag
-from flowsense.models import DAGAnalysis
+from flowsense.application import analyze_dag
+from flowsense.domain import (
+    AnalysisPolicy,
+    DAGAnalysis,
+    MappedTaskAggregation,
+)
+from flowsense.infrastructure.airflow import AirflowApiError, AirflowClient
 
 mcp = MCPServer("FlowSense Engine")
 
@@ -13,6 +18,14 @@ def serialize_analysis(analysis: DAGAnalysis) -> dict:
         "dag_id": analysis.dag_id,
         "runs_analyzed": analysis.runs_analyzed,
         "overall_severity": analysis.overall_severity,
+        "policy": {
+            "minimum_history": analysis.policy.minimum_history,
+            "baseline_window": analysis.policy.baseline_window,
+            "medium_threshold": analysis.policy.medium_threshold,
+            "high_threshold": analysis.policy.high_threshold,
+            "critical_threshold": analysis.policy.critical_threshold,
+            "mapped_task_aggregation": analysis.policy.mapped_task_aggregation,
+        },
         "primary_origin": (
             {
                 "task_id": analysis.primary_origin.task_id,
@@ -66,13 +79,45 @@ def serialize_analysis(analysis: DAGAnalysis) -> dict:
             for result in analysis.propagation_results
         ],
         "dependencies": analysis.dependencies,
+        "diagnostics": [
+            {
+                "code": diagnostic.code,
+                "subject_id": diagnostic.subject_id,
+                "message": diagnostic.message,
+            }
+            for diagnostic in analysis.diagnostics
+        ],
     }
 
 
 @mcp.tool()
-def analyze_airflow_dag(dag_id: str) -> dict:
+def analyze_airflow_dag(
+    dag_id: str,
+    minimum_history: int = 5,
+    baseline_window: int | None = None,
+    medium_threshold: float = 2.0,
+    high_threshold: float = 3.5,
+    critical_threshold: float = 5.0,
+    mapped_task_aggregation: MappedTaskAggregation = MappedTaskAggregation.MAX,
+) -> dict:
     """Analyze an Apache Airflow DAG for temporal drift and propagation."""
-    analysis = analyze_dag(dag_id)
+    try:
+        with AirflowClient() as source:
+            analysis = analyze_dag(
+                dag_id=dag_id,
+                source=source,
+                policy=AnalysisPolicy(
+                    minimum_history=minimum_history,
+                    baseline_window=baseline_window,
+                    medium_threshold=medium_threshold,
+                    high_threshold=high_threshold,
+                    critical_threshold=critical_threshold,
+                    mapped_task_aggregation=mapped_task_aggregation,
+                ),
+            )
+    except AirflowApiError as exc:
+        raise RuntimeError(str(exc)) from exc
+
     return serialize_analysis(analysis)
 
 

@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-
-from flowsense.engine.drift import DriftResult
-
-
-@dataclass
-class TaskImpact:
-    task_id: str
-    classification: str
-    task_severity: str
-    upstream_handoff_severity: str | None
+from flowsense.domain import (
+    DriftResult,
+    ImpactClassification,
+    Severity,
+    TaskImpact,
+)
+from flowsense.domain.enums import SEVERITY_SCORE
 
 
 def classify_task_impact(
@@ -21,42 +17,30 @@ def classify_task_impact(
     anomalous_handoffs = [
         drift
         for drift in upstream_handoff_drifts
-        if drift.severity
-        in {
-            "MEDIUM",
-            "HIGH",
-            "CRITICAL",
-        }
+        if drift.severity in {Severity.MEDIUM, Severity.HIGH, Severity.CRITICAL}
     ]
 
     task_is_anomalous = task_drift.severity in {
-        "MEDIUM",
-        "HIGH",
-        "CRITICAL",
+        Severity.MEDIUM,
+        Severity.HIGH,
+        Severity.CRITICAL,
     }
 
     if task_is_anomalous and anomalous_handoffs:
-        classification = "COMBINED"
+        classification = ImpactClassification.COMBINED
     elif task_is_anomalous:
-        classification = "OWN_DRIFT"
+        classification = ImpactClassification.OWN_DRIFT
     elif anomalous_handoffs:
-        classification = "INHERITED_DELAY"
+        classification = ImpactClassification.INHERITED_DELAY
     else:
-        classification = "NORMAL"
+        classification = ImpactClassification.NORMAL
 
     upstream_handoff_severity = None
 
     if anomalous_handoffs:
-        severity_order = {
-            "NORMAL": 0,
-            "MEDIUM": 1,
-            "HIGH": 2,
-            "CRITICAL": 3,
-        }
-
         upstream_handoff_severity = max(
             anomalous_handoffs,
-            key=lambda result: severity_order[result.severity],
+            key=lambda result: SEVERITY_SCORE[result.severity],
         ).severity
 
     return TaskImpact(
