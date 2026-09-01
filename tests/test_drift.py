@@ -1,3 +1,6 @@
+import pytest
+
+from flowsense.domain import InsufficientHistoryError
 from flowsense.engine.drift import calculate_drift
 
 
@@ -71,12 +74,12 @@ def test_calculate_drift_requires_minimum_history() -> None:
         3.3,
     ]
 
-    try:
+    with pytest.raises(InsufficientHistoryError) as exc_info:
         calculate_drift(
             "transform",
             durations,
         )
-    except ValueError as exc:
-        assert "en az 5 run" in str(exc)
-    else:
-        raise AssertionError("Expected ValueError for insufficient history.")
+
+    assert exc_info.value.subject_id == "transform"
+    assert exc_info.value.required == 5
+    assert exc_info.value.actual == 4

@@ -1,4 +1,9 @@
 from flowsense.domain.enums import ImpactClassification, Severity
+from flowsense.domain.exceptions import (
+    FlowSenseError,
+    InsufficientHistoryError,
+    InvalidTaskTimingError,
+)
 from flowsense.domain.models import TaskRun
 from flowsense.domain.results import (
     AnalysisDiagnostic,
@@ -13,7 +18,10 @@ __all__ = [
     "AnalysisDiagnostic",
     "DAGAnalysis",
     "DriftResult",
+    "FlowSenseError",
     "ImpactClassification",
+    "InsufficientHistoryError",
+    "InvalidTaskTimingError",
     "PropagationResult",
     "RootCauseResult",
     "Severity",

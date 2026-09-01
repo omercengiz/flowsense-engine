@@ -1,5 +1,7 @@
 from datetime import UTC, datetime, timedelta
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from flowsense.application import DAGDataSource, analyze_dag
 from flowsense.models import TaskRun
@@ -309,3 +311,27 @@ def test_analyze_dag_reports_missing_handoff_timestamp() -> None:
         and diagnostic.subject_id == "extract->transform"
         for diagnostic in analysis.diagnostics
     )
+
+
+def test_analyze_dag_does_not_hide_unexpected_value_errors() -> None:
+    client = MagicMock(spec=DAGDataSource)
+    client.collect_task_runs.return_value = [
+        TaskRun(
+            dag_id="demo",
+            dag_run_id=f"run_{index}",
+            task_id="transform",
+            state="success",
+            duration=3.0,
+        )
+        for index in range(5)
+    ]
+    client.get_dag_dependencies.return_value = {"transform": []}
+
+    with (
+        patch(
+            "flowsense.application.analyzer.calculate_drift",
+            side_effect=ValueError("unexpected failure"),
+        ),
+        pytest.raises(ValueError, match="unexpected failure"),
+    ):
+        analyze_dag("demo", client)

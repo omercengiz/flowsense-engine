@@ -4,7 +4,7 @@ import math
 
 import numpy as np
 
-from flowsense.domain import DriftResult, Severity
+from flowsense.domain import DriftResult, InsufficientHistoryError, Severity
 
 
 def calculate_drift(
@@ -12,7 +12,11 @@ def calculate_drift(
     durations: list[float],
 ) -> DriftResult:
     if len(durations) < 5:
-        raise ValueError(f"{task_id} için drift hesaplamak için en az 5 run gerekli.")
+        raise InsufficientHistoryError(
+            subject_id=task_id,
+            required=5,
+            actual=len(durations),
+        )
 
     baseline_values = np.array(
         durations[:-1],

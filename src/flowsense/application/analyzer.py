@@ -1,7 +1,12 @@
 from __future__ import annotations
 
 from flowsense.application.ports import DAGDataSource
-from flowsense.domain import AnalysisDiagnostic, DAGAnalysis, Severity
+from flowsense.domain import (
+    AnalysisDiagnostic,
+    DAGAnalysis,
+    InsufficientHistoryError,
+    Severity,
+)
 from flowsense.domain.enums import SEVERITY_SCORE
 from flowsense.engine.drift import calculate_drift
 from flowsense.engine.history import build_duration_history
@@ -30,7 +35,7 @@ def analyze_dag(
                 task_id=task_id,
                 durations=durations,
             )
-        except ValueError as exc:
+        except InsufficientHistoryError as exc:
             diagnostics.append(
                 AnalysisDiagnostic(
                     code="INSUFFICIENT_TASK_HISTORY",
@@ -67,7 +72,7 @@ def analyze_dag(
                 downstream_task=downstream_task,
                 handoff_delays=delays,
             )
-        except ValueError as exc:
+        except InsufficientHistoryError as exc:
             diagnostics.append(
                 AnalysisDiagnostic(
                     code="INSUFFICIENT_HANDOFF_HISTORY",

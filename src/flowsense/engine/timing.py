@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from flowsense.domain import DriftResult, TaskRun
+from flowsense.domain import DriftResult, InvalidTaskTimingError, TaskRun
 from flowsense.engine.drift import calculate_drift
 
 
@@ -34,13 +34,13 @@ def calculate_handoff_delay(
     downstream_run: TaskRun,
 ) -> HandoffTiming:
     if upstream_run.end_date is None:
-        raise ValueError("Upstream task end_date is required.")
+        raise InvalidTaskTimingError("Upstream task end_date is required.")
 
     if downstream_run.start_date is None:
-        raise ValueError("Downstream task start_date is required.")
+        raise InvalidTaskTimingError("Downstream task start_date is required.")
 
     if upstream_run.dag_run_id != downstream_run.dag_run_id:
-        raise ValueError("Task runs must belong to the same DAG run.")
+        raise InvalidTaskTimingError("Task runs must belong to the same DAG run.")
 
     handoff_delay = (downstream_run.start_date - upstream_run.end_date).total_seconds()
 
@@ -162,7 +162,7 @@ def build_handoff_history_with_diagnostics(
                         upstream_run=upstream_run,
                         downstream_run=downstream_run,
                     )
-                except ValueError as exc:
+                except InvalidTaskTimingError as exc:
                     diagnostics.append(
                         HandoffHistoryDiagnostic(
                             code="INVALID_HANDOFF_TIMING",

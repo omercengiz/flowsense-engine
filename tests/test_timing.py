@@ -2,6 +2,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
+from flowsense.domain import InvalidTaskTimingError
 from flowsense.engine.timing import (
     build_handoff_history,
     build_handoff_history_with_diagnostics,
@@ -55,7 +56,7 @@ def test_calculate_handoff_delay_requires_upstream_end_date() -> None:
         start_date=datetime(2026, 8, 20, 10, 0, tzinfo=UTC),
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidTaskTimingError):
         calculate_handoff_delay(
             upstream_run=upstream_run,
             downstream_run=downstream_run,
@@ -77,7 +78,7 @@ def test_calculate_handoff_delay_requires_same_dag_run() -> None:
         start_date=datetime(2026, 8, 20, 10, 0, 5, tzinfo=UTC),
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidTaskTimingError):
         calculate_handoff_delay(
             upstream_run=upstream_run,
             downstream_run=downstream_run,
