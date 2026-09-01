@@ -53,6 +53,37 @@ def test_analyze_dag_identifies_primary_origin(
 
 
 @patch("flowsense.engine.analyzer.AirflowClient")
+def test_analyze_dag_identifies_isolated_primary_origin(
+    mock_client_class: MagicMock,
+) -> None:
+    client = mock_client_class.return_value
+
+    client.collect_task_runs.return_value = [
+        TaskRun(
+            dag_id="demo",
+            dag_run_id=f"run_{index}",
+            task_id="transform",
+            state="success",
+            duration=duration,
+        )
+        for index, duration in enumerate(
+            [3.0, 3.1, 2.9, 3.0, 9.5],
+            start=1,
+        )
+    ]
+
+    client.get_dag_dependencies.return_value = {
+        "transform": [],
+    }
+
+    analysis = analyze_dag("demo")
+
+    assert analysis.propagation_results == []
+    assert analysis.primary_origin is not None
+    assert analysis.primary_origin.task_id == "transform"
+
+
+@patch("flowsense.engine.analyzer.AirflowClient")
 def test_analyze_dag_calculates_handoff_drift(
     mock_client_class: MagicMock,
 ) -> None:

@@ -94,15 +94,12 @@ def analyze_dag(dag_id: str) -> DAGAnalysis:
             key=lambda result: severity_order[result.severity],
         ).severity
 
-    primary_origin = None
-
-    if propagation_results:
-        primary_origin = select_primary_origin(
-            drift_results=drift_results,
-            task_impacts=task_impacts,
-            dependencies=dependencies,
-            propagation_results=propagation_results,
-        )
+    primary_origin = select_primary_origin(
+        drift_results=drift_results,
+        task_impacts=task_impacts,
+        dependencies=dependencies,
+        propagation_results=propagation_results,
+    )
 
     return DAGAnalysis(
         dag_id=dag_id,
