@@ -2,6 +2,65 @@ from flowsense.engine.drift import DriftResult
 from flowsense.engine.propagation import analyze_propagation
 
 
+def _drift(task_id: str, severity: str) -> DriftResult:
+    return DriftResult(
+        task_id=task_id,
+        baseline=1.0,
+        current=2.0,
+        mad=0.1,
+        robust_z_score=3.0,
+        deviation_percent=100.0,
+        severity=severity,
+    )
+
+
+def test_propagation_score_is_bounded_when_downstream_is_more_severe() -> None:
+    drift_results = {
+        "origin": _drift("origin", "HIGH"),
+        "critical": _drift("critical", "CRITICAL"),
+    }
+
+    results = analyze_propagation(
+        drift_results,
+        {"origin": ["critical"], "critical": []},
+    )
+
+    assert results[0].propagation_score == 1.0
+
+
+def test_propagation_score_gives_closer_tasks_more_weight() -> None:
+    closer_critical_results = analyze_propagation(
+        {
+            "origin": _drift("origin", "CRITICAL"),
+            "critical": _drift("critical", "CRITICAL"),
+            "medium": _drift("medium", "MEDIUM"),
+        },
+        {
+            "origin": ["critical"],
+            "critical": ["medium"],
+            "medium": [],
+        },
+    )
+    farther_critical_results = analyze_propagation(
+        {
+            "origin": _drift("origin", "CRITICAL"),
+            "medium": _drift("medium", "MEDIUM"),
+            "critical": _drift("critical", "CRITICAL"),
+        },
+        {
+            "origin": ["medium"],
+            "medium": ["critical"],
+            "critical": [],
+        },
+    )
+
+    closer_critical = closer_critical_results[0].propagation_score
+    farther_critical = farther_critical_results[0].propagation_score
+
+    assert closer_critical > farther_critical
+    assert 0.0 <= farther_critical <= closer_critical <= 1.0
+
+
 def test_detects_downstream_propagation() -> None:
     drift_results = {
         "extract": DriftResult(
