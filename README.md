@@ -209,6 +209,7 @@ src/flowsense/
 ├── application/
 ├── domain/
 ├── engine/
+│   ├── change_point.py
 │   ├── drift.py
 │   ├── history.py
 │   ├── impact.py
@@ -233,6 +234,13 @@ The latest execution is compared against that baseline using a robust Z-score.
 
 This makes the detector less sensitive to historical outliers than approaches based only on mean and standard deviation.
 
+FlowSense also scans ordered task-duration and handoff-delay histories for
+persistent level shifts. Each candidate split must leave at least three
+observations on both sides. Candidates are compared with a robust, MAD-based
+score, and detected changes report their location, direction, before/after
+medians, percentage change, and score. This prevents a single latest-run outlier
+from being reported as a structural change.
+
 ## Project Status
 
 FlowSense is currently in early development.
@@ -246,7 +254,6 @@ Planned areas include:
 - DAG-level analysis models
 - configurable historical baseline windows
 - improved propagation scoring
-- change-point detection
 - trend detection
 - richer CLI reporting
 - broader Airflow compatibility testing

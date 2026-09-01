@@ -1,4 +1,4 @@
-from flowsense.domain.enums import ImpactClassification, Severity
+from flowsense.domain.enums import ChangeDirection, ImpactClassification, Severity
 from flowsense.domain.exceptions import (
     FlowSenseError,
     InsufficientHistoryError,
@@ -7,6 +7,7 @@ from flowsense.domain.exceptions import (
 from flowsense.domain.models import TaskRun
 from flowsense.domain.results import (
     AnalysisDiagnostic,
+    ChangePointResult,
     DAGAnalysis,
     DriftResult,
     PropagationResult,
@@ -16,6 +17,8 @@ from flowsense.domain.results import (
 
 __all__ = [
     "AnalysisDiagnostic",
+    "ChangeDirection",
+    "ChangePointResult",
     "DAGAnalysis",
     "DriftResult",
     "FlowSenseError",

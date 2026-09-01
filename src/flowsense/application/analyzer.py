@@ -8,6 +8,7 @@ from flowsense.domain import (
     Severity,
 )
 from flowsense.domain.enums import SEVERITY_SCORE
+from flowsense.engine.change_point import detect_change_point
 from flowsense.engine.drift import calculate_drift
 from flowsense.engine.history import build_duration_history
 from flowsense.engine.impact import classify_task_impact
@@ -26,10 +27,15 @@ def analyze_dag(
     task_runs = source.collect_task_runs(dag_id)
     duration_history = build_duration_history(task_runs)
     diagnostics: list[AnalysisDiagnostic] = []
+    change_point_results = {}
 
     drift_results = {}
 
     for task_id, durations in duration_history.items():
+        change_point = detect_change_point(task_id, durations)
+        if change_point is not None:
+            change_point_results[task_id] = change_point
+
         try:
             drift_results[task_id] = calculate_drift(
                 task_id=task_id,
@@ -51,6 +57,7 @@ def analyze_dag(
         dependencies=dependencies,
     )
     handoff_history = handoff_history_result.history
+    handoff_change_point_results = {}
 
     diagnostics.extend(
         AnalysisDiagnostic(
@@ -65,6 +72,12 @@ def analyze_dag(
 
     for edge, delays in handoff_history.items():
         upstream_task, downstream_task = edge
+        change_point = detect_change_point(
+            f"{upstream_task}->{downstream_task}",
+            delays,
+        )
+        if change_point is not None:
+            handoff_change_point_results[edge] = change_point
 
         try:
             handoff_drift_results[edge] = calculate_handoff_drift(
@@ -134,4 +147,6 @@ def analyze_dag(
         propagation_results=propagation_results,
         dependencies=dependencies,
         diagnostics=diagnostics,
+        change_point_results=change_point_results,
+        handoff_change_point_results=handoff_change_point_results,
     )

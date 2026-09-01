@@ -3,6 +3,8 @@ from importlib.metadata import PackageNotFoundError, version
 from flowsense.application import DAGDataSource, analyze_dag
 from flowsense.domain import (
     AnalysisDiagnostic,
+    ChangeDirection,
+    ChangePointResult,
     DAGAnalysis,
     DriftResult,
     FlowSenseError,
@@ -26,6 +28,8 @@ __all__ = [
     "AirflowApiError",
     "AirflowClient",
     "AnalysisDiagnostic",
+    "ChangeDirection",
+    "ChangePointResult",
     "DAGAnalysis",
     "DAGDataSource",
     "DriftResult",
