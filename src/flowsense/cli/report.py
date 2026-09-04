@@ -25,12 +25,25 @@ def _percent(value: float | None) -> str:
 
 
 def _render_summary(console: Console, analysis: DAGAnalysis) -> None:
+    dag_summary = analysis.summary
     summary = Table.grid(padding=(0, 2))
     summary.add_column(style="bold")
     summary.add_column()
     summary.add_row("DAG", analysis.dag_id)
     summary.add_row("Runs analyzed", str(analysis.runs_analyzed))
     summary.add_row("Overall severity", _severity_text(analysis.overall_severity))
+    summary.add_row(
+        "Task coverage",
+        f"{dag_summary.analyzed_tasks}/{dag_summary.total_tasks} "
+        f"({dag_summary.analysis_coverage_percent:.1f}%)",
+    )
+    summary.add_row("Anomalous tasks", str(dag_summary.anomalous_tasks))
+    summary.add_row("Anomalous handoffs", str(dag_summary.anomalous_handoffs))
+    summary.add_row("Affected tasks", str(dag_summary.affected_tasks))
+    summary.add_row(
+        "Structural signals",
+        f"{dag_summary.change_points} change points, {dag_summary.trends} trends",
+    )
 
     if analysis.primary_origin is not None:
         summary.add_row("Primary origin", analysis.primary_origin.task_id)

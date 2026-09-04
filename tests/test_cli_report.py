@@ -101,6 +101,9 @@ def test_renders_complete_analysis_report() -> None:
 
     report = output.getvalue()
     assert "FlowSense Analysis" in report
+    assert "Task coverage" in report
+    assert "1/3 (33.3%)" in report
+    assert "Structural signals" in report
     assert "Task Drift" in report
     assert "Handoff Drift" in report
     assert "Change Points" in report

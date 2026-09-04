@@ -156,6 +156,21 @@ def test_serialize_analysis() -> None:
     assert result["dag_id"] == "demo"
     assert result["runs_analyzed"] == 5
     assert result["overall_severity"] == "CRITICAL"
+    assert result["summary"] == {
+        "total_tasks": 2,
+        "analyzed_tasks": 1,
+        "analysis_coverage_percent": 50.0,
+        "normal_tasks": 0,
+        "medium_tasks": 0,
+        "high_tasks": 0,
+        "critical_tasks": 1,
+        "anomalous_tasks": 1,
+        "anomalous_handoffs": 1,
+        "affected_tasks": 0,
+        "change_points": 2,
+        "trends": 2,
+        "diagnostics": 1,
+    }
 
     primary_origin = result["primary_origin"]
 
