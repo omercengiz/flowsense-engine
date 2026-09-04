@@ -14,10 +14,27 @@ mcp = MCPServer("FlowSense Engine")
 
 
 def serialize_analysis(analysis: DAGAnalysis) -> dict:
+    summary = analysis.summary
+
     return {
         "dag_id": analysis.dag_id,
         "runs_analyzed": analysis.runs_analyzed,
         "overall_severity": analysis.overall_severity,
+        "summary": {
+            "total_tasks": summary.total_tasks,
+            "analyzed_tasks": summary.analyzed_tasks,
+            "analysis_coverage_percent": summary.analysis_coverage_percent,
+            "normal_tasks": summary.normal_tasks,
+            "medium_tasks": summary.medium_tasks,
+            "high_tasks": summary.high_tasks,
+            "critical_tasks": summary.critical_tasks,
+            "anomalous_tasks": summary.anomalous_tasks,
+            "anomalous_handoffs": summary.anomalous_handoffs,
+            "affected_tasks": summary.affected_tasks,
+            "change_points": summary.change_points,
+            "trends": summary.trends,
+            "diagnostics": summary.diagnostics,
+        },
         "policy": {
             "minimum_history": analysis.policy.minimum_history,
             "baseline_window": analysis.policy.baseline_window,

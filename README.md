@@ -184,6 +184,11 @@ policy = AnalysisPolicy(
 run. Mapped task durations can be aggregated with `MAX`, `MEAN`, or `SUM`. The
 same policy options are available through the CLI and MCP tool.
 
+Every `DAGAnalysis` exposes a derived `summary` with task-analysis coverage,
+severity distribution, anomalous task and handoff counts, uniquely affected
+tasks, structural signals, and diagnostics. The same DAG-level summary is
+included in CLI and MCP output.
+
 Custom data sources can implement the `DAGDataSource` protocol and be passed to
 `analyze_dag`. Names exported directly from `flowsense` form the supported public
 API. Imports from internal packages such as `flowsense.engine` should be treated
@@ -289,14 +294,6 @@ total and percentage change, direction, consistency, and score.
 FlowSense is currently in early development.
 
 The current implementation should be considered experimental and is not yet intended for production use.
-
-## Roadmap
-
-Planned areas include:
-
-- DAG-level analysis models
-- richer CLI reporting
-- broader Airflow compatibility testing
 
 ## License
 
