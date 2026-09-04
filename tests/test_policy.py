@@ -20,6 +20,24 @@ def test_policy_validates_history_and_thresholds() -> None:
         AnalysisPolicy(minimum_history=5, baseline_window=3)
 
 
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"change_point_minimum_segment_size": 1},
+        {"change_point_score_threshold": 0.0},
+        {"trend_minimum_observations": 2},
+        {"trend_score_threshold": 0.0},
+        {"trend_minimum_directional_consistency": 0.0},
+        {"trend_minimum_directional_consistency": 1.1},
+    ],
+)
+def test_policy_validates_structural_analysis_settings(
+    overrides: dict[str, int | float],
+) -> None:
+    with pytest.raises(ValueError):
+        AnalysisPolicy(**overrides)
+
+
 def test_drift_uses_configured_minimum_history_and_thresholds() -> None:
     policy = AnalysisPolicy(
         minimum_history=3,

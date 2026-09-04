@@ -42,6 +42,21 @@ def serialize_analysis(analysis: DAGAnalysis) -> dict:
             "high_threshold": analysis.policy.high_threshold,
             "critical_threshold": analysis.policy.critical_threshold,
             "mapped_task_aggregation": analysis.policy.mapped_task_aggregation,
+            "change_point_detection_enabled": (
+                analysis.policy.change_point_detection_enabled
+            ),
+            "change_point_minimum_segment_size": (
+                analysis.policy.change_point_minimum_segment_size
+            ),
+            "change_point_score_threshold": (
+                analysis.policy.change_point_score_threshold
+            ),
+            "trend_detection_enabled": analysis.policy.trend_detection_enabled,
+            "trend_minimum_observations": (analysis.policy.trend_minimum_observations),
+            "trend_score_threshold": analysis.policy.trend_score_threshold,
+            "trend_minimum_directional_consistency": (
+                analysis.policy.trend_minimum_directional_consistency
+            ),
         },
         "primary_origin": (
             {
@@ -164,6 +179,13 @@ def analyze_airflow_dag(
     medium_threshold: float = 2.0,
     high_threshold: float = 3.5,
     critical_threshold: float = 5.0,
+    change_point_detection_enabled: bool = True,
+    change_point_minimum_segment_size: int = 3,
+    change_point_score_threshold: float = 3.5,
+    trend_detection_enabled: bool = True,
+    trend_minimum_observations: int = 5,
+    trend_score_threshold: float = 3.5,
+    trend_minimum_directional_consistency: float = 0.6,
     mapped_task_aggregation: MappedTaskAggregation = MappedTaskAggregation.MAX,
 ) -> dict:
     """Analyze an Apache Airflow DAG for temporal drift and propagation."""
@@ -179,6 +201,17 @@ def analyze_airflow_dag(
                     high_threshold=high_threshold,
                     critical_threshold=critical_threshold,
                     mapped_task_aggregation=mapped_task_aggregation,
+                    change_point_detection_enabled=change_point_detection_enabled,
+                    change_point_minimum_segment_size=(
+                        change_point_minimum_segment_size
+                    ),
+                    change_point_score_threshold=change_point_score_threshold,
+                    trend_detection_enabled=trend_detection_enabled,
+                    trend_minimum_observations=trend_minimum_observations,
+                    trend_score_threshold=trend_score_threshold,
+                    trend_minimum_directional_consistency=(
+                        trend_minimum_directional_consistency
+                    ),
                 ),
             )
     except AirflowApiError as exc:
