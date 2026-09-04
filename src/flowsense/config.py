@@ -9,6 +9,8 @@ class AirflowConfig:
     base_url: str
     username: str
     password: str
+    api_version: str = "v2"
+    auth_mode: str = "token"
 
 
 def get_airflow_config() -> AirflowConfig:
@@ -19,6 +21,8 @@ def get_airflow_config() -> AirflowConfig:
 
     username = os.getenv("AIRFLOW_USERNAME")
     password = os.getenv("AIRFLOW_PASSWORD")
+    api_version = os.getenv("AIRFLOW_API_VERSION", "v2")
+    auth_mode = os.getenv("AIRFLOW_AUTH_MODE", "token")
 
     if not username:
         raise RuntimeError("AIRFLOW_USERNAME environment variable is required.")
@@ -30,4 +34,6 @@ def get_airflow_config() -> AirflowConfig:
         base_url=base_url,
         username=username,
         password=password,
+        api_version=api_version,
+        auth_mode=auth_mode,
     )
