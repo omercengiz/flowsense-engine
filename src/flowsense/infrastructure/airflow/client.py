@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Self
+from typing import Any, Literal, Self
 
 import httpx
 
@@ -18,6 +18,8 @@ from flowsense.infrastructure.airflow.mapper import (
 )
 
 PAGE_SIZE = 100
+AirflowApiVersion = Literal["v1", "v2"]
+AirflowAuthMode = Literal["basic", "token"]
 
 
 class AirflowClient:
@@ -26,6 +28,8 @@ class AirflowClient:
         base_url: str | None = None,
         username: str | None = None,
         password: str | None = None,
+        api_version: AirflowApiVersion | None = None,
+        auth_mode: AirflowAuthMode | None = None,
         http_client: httpx.Client | None = None,
     ):
         config = get_airflow_config()
@@ -33,6 +37,15 @@ class AirflowClient:
         self.base_url = (base_url or config.base_url).rstrip("/")
         self.username = username or config.username
         self.password = password or config.password
+        self.api_version = api_version or config.api_version
+        self.auth_mode = auth_mode or config.auth_mode
+
+        if self.api_version not in {"v1", "v2"}:
+            raise ValueError("api_version must be 'v1' or 'v2'")
+
+        if self.auth_mode not in {"basic", "token"}:
+            raise ValueError("auth_mode must be 'basic' or 'token'")
+
         self._owns_http_client = http_client is None
         self._http_client = http_client or httpx.Client(timeout=10.0)
         self._token: str | None = None
@@ -94,10 +107,21 @@ class AirflowClient:
         return token
 
     def _headers(self) -> dict[str, str]:
-        return {
-            "Authorization": f"Bearer {self._get_token()}",
-            "Accept": "application/json",
-        }
+        headers = {"Accept": "application/json"}
+
+        if self.auth_mode == "token":
+            headers["Authorization"] = f"Bearer {self._get_token()}"
+
+        return headers
+
+    def _authentication(self) -> httpx.BasicAuth | None:
+        if self.auth_mode == "basic":
+            return httpx.BasicAuth(self.username, self.password)
+
+        return None
+
+    def _api_url(self, path: str) -> str:
+        return f"{self.base_url}/api/{self.api_version}{path}"
 
     def _get_paginated(
         self,
@@ -109,11 +133,18 @@ class AirflowClient:
         last_page: dict = {}
 
         while True:
+            request_kwargs: dict[str, object] = {
+                "headers": self._headers(),
+                "params": {"limit": PAGE_SIZE, "offset": offset},
+            }
+            authentication = self._authentication()
+            if authentication is not None:
+                request_kwargs["auth"] = authentication
+
             response = self._request(
                 method="GET",
                 url=url,
-                headers=self._headers(),
-                params={"limit": PAGE_SIZE, "offset": offset},
+                **request_kwargs,
             )
 
             last_page = response.json()
@@ -140,7 +171,7 @@ class AirflowClient:
 
     def get_dag_runs(self, dag_id: str) -> dict:
         return self._get_paginated(
-            url=f"{self.base_url}/api/v2/dags/{dag_id}/dagRuns",
+            url=self._api_url(f"/dags/{dag_id}/dagRuns"),
             collection_key="dag_runs",
         )
 
@@ -150,10 +181,7 @@ class AirflowClient:
         dag_run_id: str,
     ) -> dict:
         return self._get_paginated(
-            url=(
-                f"{self.base_url}/api/v2/dags/{dag_id}/dagRuns/"
-                f"{dag_run_id}/taskInstances"
-            ),
+            url=self._api_url(f"/dags/{dag_id}/dagRuns/{dag_run_id}/taskInstances"),
             collection_key="task_instances",
         )
 
@@ -164,7 +192,7 @@ class AirflowClient:
         ]
 
         def run_timestamp(run: AirflowDagRunDTO) -> float:
-            timestamp = run.run_after or run.queued_at
+            timestamp = run.run_after or run.logical_date or run.queued_at
             return timestamp.timestamp() if timestamp is not None else float("-inf")
 
         dag_runs.sort(key=run_timestamp)
@@ -198,7 +226,7 @@ class AirflowClient:
 
     def get_dag_tasks(self, dag_id: str) -> dict:
         return self._get_paginated(
-            url=f"{self.base_url}/api/v2/dags/{dag_id}/tasks",
+            url=self._api_url(f"/dags/{dag_id}/tasks"),
             collection_key="tasks",
         )
 
