@@ -27,6 +27,7 @@ def test_top_level_api_declares_supported_exports() -> None:
         "ChangeDirection",
         "ChangePointResult",
         "DAGAnalysis",
+        "DAGAnalysisSummary",
         "DAGDataSource",
         "Severity",
         "MappedTaskAggregation",
