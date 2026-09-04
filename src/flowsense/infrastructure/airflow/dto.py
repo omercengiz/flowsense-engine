@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 
 class AirflowDTO(BaseModel):
@@ -10,6 +10,10 @@ class AirflowDTO(BaseModel):
 class AirflowDagRunDTO(AirflowDTO):
     dag_run_id: str
     state: str | None = None
+    logical_date: datetime | None = Field(
+        default=None,
+        validation_alias=AliasChoices("logical_date", "execution_date"),
+    )
     run_after: datetime | None = None
     queued_at: datetime | None = None
 
