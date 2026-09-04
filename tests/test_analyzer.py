@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from flowsense import AnalysisPolicy
 from flowsense.application import DAGDataSource, analyze_dag
 from flowsense.models import TaskRun
 
@@ -183,6 +184,34 @@ def test_analyze_dag_detects_task_and_handoff_trends() -> None:
     assert task_trend.slope_per_observation == 1.0
     assert handoff_trend.direction == "INCREASING"
     assert handoff_trend.slope_per_observation == 1.0
+
+
+def test_analyze_dag_uses_structural_analysis_policy() -> None:
+    client = MagicMock(spec=DAGDataSource)
+    client.collect_task_runs.return_value = [
+        TaskRun(
+            dag_id="demo",
+            dag_run_id=f"run_{index}",
+            task_id="transform",
+            state="success",
+            duration=duration,
+        )
+        for index, duration in enumerate(
+            [3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
+            start=1,
+        )
+    ]
+    client.get_dag_dependencies.return_value = {"transform": []}
+    policy = AnalysisPolicy(
+        change_point_detection_enabled=False,
+        trend_detection_enabled=False,
+    )
+
+    analysis = analyze_dag("demo", client, policy=policy)
+
+    assert analysis.change_point_results == {}
+    assert analysis.trend_results == {}
+    assert analysis.policy is policy
 
 
 def test_analyze_dag_calculates_handoff_drift() -> None:
