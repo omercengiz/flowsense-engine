@@ -177,12 +177,19 @@ policy = AnalysisPolicy(
     high_threshold=4.0,
     critical_threshold=6.0,
     mapped_task_aggregation=MappedTaskAggregation.MAX,
+    change_point_minimum_segment_size=4,
+    change_point_score_threshold=4.0,
+    trend_minimum_observations=8,
+    trend_score_threshold=4.0,
+    trend_minimum_directional_consistency=0.75,
 )
 ```
 
 `baseline_window` limits the number of historical values used before the current
 run. Mapped task durations can be aggregated with `MAX`, `MEAN`, or `SUM`. The
 same policy options are available through the CLI and MCP tool.
+Change-point and trend detection can also be disabled independently with
+`change_point_detection_enabled=False` or `trend_detection_enabled=False`.
 
 Every `DAGAnalysis` exposes a derived `summary` with task-analysis coverage,
 severity distribution, anomalous task and handoff counts, uniquely affected

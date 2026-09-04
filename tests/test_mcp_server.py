@@ -156,6 +156,21 @@ def test_serialize_analysis() -> None:
     assert result["dag_id"] == "demo"
     assert result["runs_analyzed"] == 5
     assert result["overall_severity"] == "CRITICAL"
+    assert result["policy"] == {
+        "minimum_history": 5,
+        "baseline_window": None,
+        "medium_threshold": 2.0,
+        "high_threshold": 3.5,
+        "critical_threshold": 5.0,
+        "mapped_task_aggregation": "MAX",
+        "change_point_detection_enabled": True,
+        "change_point_minimum_segment_size": 3,
+        "change_point_score_threshold": 3.5,
+        "trend_detection_enabled": True,
+        "trend_minimum_observations": 5,
+        "trend_score_threshold": 3.5,
+        "trend_minimum_directional_consistency": 0.6,
+    }
     assert result["summary"] == {
         "total_tasks": 2,
         "analyzed_tasks": 1,
