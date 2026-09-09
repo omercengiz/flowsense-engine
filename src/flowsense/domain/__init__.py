@@ -4,6 +4,7 @@ from flowsense.domain.enums import (
     MappedTaskAggregation,
     Severity,
     TrendDirection,
+    severity_meets_threshold,
 )
 from flowsense.domain.exceptions import (
     FlowSenseError,
@@ -45,4 +46,5 @@ __all__ = [
     "TaskRun",
     "TrendDirection",
     "TrendResult",
+    "severity_meets_threshold",
 ]

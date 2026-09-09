@@ -8,6 +8,7 @@ from flowsense.domain import (
     Severity,
     TaskImpact,
     TaskRun,
+    severity_meets_threshold,
 )
 from flowsense.engine.drift import DriftResult as LegacyDriftResult
 from flowsense.engine.impact import TaskImpact as LegacyTaskImpact
@@ -27,6 +28,12 @@ from flowsense.models import (
 def test_domain_enums_are_string_compatible() -> None:
     assert Severity.CRITICAL == "CRITICAL"
     assert ImpactClassification.OWN_DRIFT == "OWN_DRIFT"
+
+
+def test_severity_threshold_comparison_uses_domain_ordering() -> None:
+    assert severity_meets_threshold(Severity.HIGH, Severity.HIGH)
+    assert severity_meets_threshold(Severity.CRITICAL, Severity.MEDIUM)
+    assert not severity_meets_threshold(Severity.MEDIUM, Severity.HIGH)
 
 
 def test_legacy_model_imports_reexport_domain_types() -> None:

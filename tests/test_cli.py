@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from typer.testing import CliRunner
 
-from flowsense import DAGAnalysis
+from flowsense import DAGAnalysis, Severity
 from flowsense.cli.main import app
 from flowsense.infrastructure.airflow import AirflowApiError
 
@@ -87,3 +87,60 @@ def test_analyze_outputs_versioned_json() -> None:
     assert document["dag_id"] == "demo"
     assert document["overall_severity"] == "NORMAL"
     render_analysis.assert_not_called()
+
+
+def test_analyze_exits_with_threshold_code_after_rendering_report() -> None:
+    analysis = _analysis_with_severity(Severity.HIGH)
+
+    with (
+        patch("flowsense.cli.main.AirflowClient"),
+        patch("flowsense.cli.main.analyze_dag", return_value=analysis),
+        patch("flowsense.cli.main.render_analysis") as render_analysis,
+    ):
+        result = CliRunner().invoke(app, ["analyze", "demo", "--fail-on", "high"])
+
+    assert result.exit_code == 2
+    render_analysis.assert_called_once()
+
+
+def test_analyze_succeeds_when_severity_is_below_threshold() -> None:
+    analysis = _analysis_with_severity(Severity.MEDIUM)
+
+    with (
+        patch("flowsense.cli.main.AirflowClient"),
+        patch("flowsense.cli.main.analyze_dag", return_value=analysis),
+        patch("flowsense.cli.main.render_analysis"),
+    ):
+        result = CliRunner().invoke(app, ["analyze", "demo", "--fail-on", "high"])
+
+    assert result.exit_code == 0
+
+
+def test_analyze_outputs_valid_json_before_threshold_exit() -> None:
+    analysis = _analysis_with_severity(Severity.CRITICAL)
+
+    with (
+        patch("flowsense.cli.main.AirflowClient"),
+        patch("flowsense.cli.main.analyze_dag", return_value=analysis),
+    ):
+        result = CliRunner().invoke(
+            app,
+            ["analyze", "demo", "--output", "json", "--fail-on", "medium"],
+        )
+
+    assert result.exit_code == 2
+    assert json.loads(result.output)["overall_severity"] == "CRITICAL"
+
+
+def _analysis_with_severity(severity: Severity) -> DAGAnalysis:
+    return DAGAnalysis(
+        dag_id="demo",
+        runs_analyzed=0,
+        overall_severity=severity,
+        primary_origin=None,
+        drift_results={},
+        handoff_drift_results={},
+        task_impacts={},
+        propagation_results=[],
+        dependencies={},
+    )
