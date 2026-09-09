@@ -23,6 +23,7 @@ def test_top_level_api_declares_supported_exports() -> None:
     expected_exports = {
         "AirflowApiError",
         "AirflowClient",
+        "ANALYSIS_SCHEMA_VERSION",
         "AnalysisPolicy",
         "ChangeDirection",
         "ChangePointResult",
@@ -36,6 +37,7 @@ def test_top_level_api_declares_supported_exports() -> None:
         "TrendResult",
         "__version__",
         "analyze_dag",
+        "serialize_analysis",
     }
 
     assert expected_exports <= set(flowsense.__all__)

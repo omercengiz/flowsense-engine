@@ -2,173 +2,11 @@ from __future__ import annotations
 
 from mcp.server import MCPServer
 
-from flowsense.application import analyze_dag
-from flowsense.domain import (
-    AnalysisPolicy,
-    DAGAnalysis,
-    MappedTaskAggregation,
-)
+from flowsense.application import analyze_dag, serialize_analysis
+from flowsense.domain import AnalysisPolicy, MappedTaskAggregation
 from flowsense.infrastructure.airflow import AirflowApiError, AirflowClient
 
 mcp = MCPServer("FlowSense Engine")
-
-
-def serialize_analysis(analysis: DAGAnalysis) -> dict:
-    summary = analysis.summary
-
-    return {
-        "dag_id": analysis.dag_id,
-        "runs_analyzed": analysis.runs_analyzed,
-        "overall_severity": analysis.overall_severity,
-        "summary": {
-            "total_tasks": summary.total_tasks,
-            "analyzed_tasks": summary.analyzed_tasks,
-            "analysis_coverage_percent": summary.analysis_coverage_percent,
-            "normal_tasks": summary.normal_tasks,
-            "medium_tasks": summary.medium_tasks,
-            "high_tasks": summary.high_tasks,
-            "critical_tasks": summary.critical_tasks,
-            "anomalous_tasks": summary.anomalous_tasks,
-            "anomalous_handoffs": summary.anomalous_handoffs,
-            "affected_tasks": summary.affected_tasks,
-            "change_points": summary.change_points,
-            "trends": summary.trends,
-            "diagnostics": summary.diagnostics,
-        },
-        "policy": {
-            "minimum_history": analysis.policy.minimum_history,
-            "baseline_window": analysis.policy.baseline_window,
-            "medium_threshold": analysis.policy.medium_threshold,
-            "high_threshold": analysis.policy.high_threshold,
-            "critical_threshold": analysis.policy.critical_threshold,
-            "mapped_task_aggregation": analysis.policy.mapped_task_aggregation,
-            "change_point_detection_enabled": (
-                analysis.policy.change_point_detection_enabled
-            ),
-            "change_point_minimum_segment_size": (
-                analysis.policy.change_point_minimum_segment_size
-            ),
-            "change_point_score_threshold": (
-                analysis.policy.change_point_score_threshold
-            ),
-            "trend_detection_enabled": analysis.policy.trend_detection_enabled,
-            "trend_minimum_observations": (analysis.policy.trend_minimum_observations),
-            "trend_score_threshold": analysis.policy.trend_score_threshold,
-            "trend_minimum_directional_consistency": (
-                analysis.policy.trend_minimum_directional_consistency
-            ),
-        },
-        "primary_origin": (
-            {
-                "task_id": analysis.primary_origin.task_id,
-                "classification": analysis.primary_origin.classification,
-                "severity": analysis.primary_origin.severity,
-                "propagation_score": analysis.primary_origin.propagation_score,
-            }
-            if analysis.primary_origin
-            else None
-        ),
-        "drift_results": {
-            task_id: {
-                "baseline": result.baseline,
-                "current": result.current,
-                "mad": result.mad,
-                "robust_z_score": result.robust_z_score,
-                "deviation_percent": result.deviation_percent,
-                "severity": result.severity,
-            }
-            for task_id, result in analysis.drift_results.items()
-        },
-        "change_point_results": {
-            task_id: {
-                "change_index": result.change_index,
-                "before_median": result.before_median,
-                "after_median": result.after_median,
-                "change_percent": result.change_percent,
-                "score": result.score,
-                "direction": result.direction,
-            }
-            for task_id, result in analysis.change_point_results.items()
-        },
-        "trend_results": {
-            task_id: {
-                "direction": result.direction,
-                "slope_per_observation": result.slope_per_observation,
-                "estimated_change": result.estimated_change,
-                "change_percent": result.change_percent,
-                "score": result.score,
-                "directional_consistency": result.directional_consistency,
-                "observations": result.observations,
-            }
-            for task_id, result in analysis.trend_results.items()
-        },
-        "handoff_drift_results": {
-            f"{upstream}->{downstream}": {
-                "baseline": result.baseline,
-                "current": result.current,
-                "mad": result.mad,
-                "robust_z_score": result.robust_z_score,
-                "deviation_percent": result.deviation_percent,
-                "severity": result.severity,
-            }
-            for (
-                upstream,
-                downstream,
-            ), result in analysis.handoff_drift_results.items()
-        },
-        "handoff_change_point_results": {
-            f"{upstream}->{downstream}": {
-                "change_index": result.change_index,
-                "before_median": result.before_median,
-                "after_median": result.after_median,
-                "change_percent": result.change_percent,
-                "score": result.score,
-                "direction": result.direction,
-            }
-            for (
-                upstream,
-                downstream,
-            ), result in analysis.handoff_change_point_results.items()
-        },
-        "handoff_trend_results": {
-            f"{upstream}->{downstream}": {
-                "direction": result.direction,
-                "slope_per_observation": result.slope_per_observation,
-                "estimated_change": result.estimated_change,
-                "change_percent": result.change_percent,
-                "score": result.score,
-                "directional_consistency": result.directional_consistency,
-                "observations": result.observations,
-            }
-            for (upstream, downstream), result in analysis.handoff_trend_results.items()
-        },
-        "task_impacts": {
-            task_id: {
-                "classification": impact.classification,
-                "task_severity": impact.task_severity,
-                "upstream_handoff_severity": impact.upstream_handoff_severity,
-            }
-            for task_id, impact in analysis.task_impacts.items()
-        },
-        "propagation_results": [
-            {
-                "origin_task": result.origin_task,
-                "affected_tasks": result.affected_tasks,
-                "path": result.path,
-                "propagation_score": result.propagation_score,
-            }
-            for result in analysis.propagation_results
-        ],
-        "dependencies": analysis.dependencies,
-        "diagnostics": [
-            {
-                "code": diagnostic.code,
-                "subject_id": diagnostic.subject_id,
-                "message": diagnostic.message,
-            }
-            for diagnostic in analysis.diagnostics
-        ],
-    }
 
 
 @mcp.tool()
@@ -187,7 +25,7 @@ def analyze_airflow_dag(
     trend_score_threshold: float = 3.5,
     trend_minimum_directional_consistency: float = 0.6,
     mapped_task_aggregation: MappedTaskAggregation = MappedTaskAggregation.MAX,
-) -> dict:
+) -> dict[str, object]:
     """Analyze an Apache Airflow DAG for temporal drift and propagation."""
     try:
         with AirflowClient() as source:

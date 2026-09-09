@@ -153,6 +153,7 @@ def test_serialize_analysis() -> None:
 
     result = serialize_analysis(analysis)
 
+    assert result["schema_version"] == "1.0"
     assert result["dag_id"] == "demo"
     assert result["runs_analyzed"] == 5
     assert result["overall_severity"] == "CRITICAL"
