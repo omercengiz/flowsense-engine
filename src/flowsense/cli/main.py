@@ -86,6 +86,11 @@ def analyze(
             help="Exit with code 2 when severity reaches this threshold.",
         ),
     ] = None,
+    history_run_limit: int | None = typer.Option(
+        None,
+        min=2,
+        help="Limit collection to the most recent successful DAG runs.",
+    ),
 ) -> None:
     try:
         policy = AnalysisPolicy(
@@ -109,7 +114,7 @@ def analyze(
         raise typer.BadParameter(str(exc)) from exc
 
     try:
-        with AirflowClient() as source:
+        with AirflowClient(history_run_limit=history_run_limit) as source:
             analysis = analyze_dag(
                 dag_id=dag_id,
                 source=source,

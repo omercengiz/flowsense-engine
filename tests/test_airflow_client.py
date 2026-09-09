@@ -132,6 +132,72 @@ def test_does_not_close_injected_http_client(
     http_client.close.assert_not_called()
 
 
+def test_collect_task_runs_limits_to_latest_successful_dag_runs(
+    client: AirflowClient,
+) -> None:
+    client.history_run_limit = 2
+    client.get_dag_runs = MagicMock(
+        return_value={
+            "dag_runs": [
+                {
+                    "dag_run_id": "newest",
+                    "state": "success",
+                    "logical_date": "2026-01-04T00:00:00Z",
+                },
+                {
+                    "dag_run_id": "failed",
+                    "state": "failed",
+                    "logical_date": "2026-01-05T00:00:00Z",
+                },
+                {
+                    "dag_run_id": "oldest",
+                    "state": "success",
+                    "logical_date": "2026-01-01T00:00:00Z",
+                },
+                {
+                    "dag_run_id": "middle",
+                    "state": "success",
+                    "logical_date": "2026-01-03T00:00:00Z",
+                },
+            ]
+        }
+    )
+    client.get_task_instances = MagicMock(
+        side_effect=lambda dag_id, dag_run_id: {
+            "task_instances": [
+                {
+                    "task_id": f"task_{dag_id}_{dag_run_id}",
+                    "state": "success",
+                    "duration": 1.0,
+                }
+            ]
+        }
+    )
+
+    task_runs = client.collect_task_runs("demo")
+
+    assert [run.dag_run_id for run in task_runs] == ["middle", "newest"]
+    assert client.get_task_instances.call_args_list == [
+        call(dag_id="demo", dag_run_id="middle"),
+        call(dag_id="demo", dag_run_id="newest"),
+    ]
+
+
+def test_rejects_history_run_limit_below_two(http_client: MagicMock) -> None:
+    with (
+        patch(
+            "flowsense.infrastructure.airflow.client.get_airflow_config",
+            return_value=AirflowConfig(
+                base_url="http://airflow.test",
+                username="airflow",
+                password="airflow",
+            ),
+        ),
+        pytest.raises(ValueError, match="history_run_limit"),
+    ):
+        AirflowClient(history_run_limit=1, http_client=http_client)
+
+
 def test_wraps_http_status_errors_without_response_body(
     client: AirflowClient,
     http_client: MagicMock,
