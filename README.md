@@ -185,7 +185,8 @@ flowsense analyze <dag_id> --history-run-limit 250
 ```
 
 The MCP tool exposes the same override as `history_run_limit`. The limit must
-be at least `2`; increase it when analysis policies require a larger history.
+be at least `2` and cannot be lower than `minimum_history`; contradictory
+requests are rejected before FlowSense connects to Airflow.
 
 The JSON document and MCP tool response share the same serialization contract
 and include a `schema_version` field. The serializer is also available from the
@@ -248,6 +249,10 @@ run. Mapped task durations can be aggregated with `MAX`, `MEAN`, or `SUM`. The
 same policy options are available through the CLI and MCP tool.
 Change-point and trend detection can also be disabled independently with
 `change_point_detection_enabled=False` or `trend_detection_enabled=False`.
+
+CLI and MCP inputs are normalized into an immutable `AnalysisRequest` before
+execution. Library integrations may use the same public DTO when they need to
+validate a DAG id, policy, and explicit history collection limit together.
 
 Every `DAGAnalysis` exposes a derived `summary` with task-analysis coverage,
 severity distribution, anomalous task and handoff counts, uniquely affected

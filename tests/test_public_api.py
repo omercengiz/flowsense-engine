@@ -26,6 +26,7 @@ def test_top_level_api_declares_supported_exports() -> None:
         "AirflowDataError",
         "ANALYSIS_SCHEMA_VERSION",
         "AnalysisPolicy",
+        "AnalysisRequest",
         "AnalysisDocument",
         "ChangeDirection",
         "ChangePointResult",

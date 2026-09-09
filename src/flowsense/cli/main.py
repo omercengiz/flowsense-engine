@@ -7,7 +7,12 @@ from typing import Annotated
 import typer
 from rich.console import Console
 
-from flowsense.application import analysis_json_schema, analyze_dag, serialize_analysis
+from flowsense.application import (
+    AnalysisRequest,
+    analysis_json_schema,
+    analyze_dag,
+    serialize_analysis,
+)
 from flowsense.cli.report import render_analysis
 from flowsense.domain import (
     AnalysisPolicy,
@@ -128,11 +133,16 @@ def analyze(
         raise typer.BadParameter(str(exc)) from exc
 
     try:
+        request = AnalysisRequest(
+            dag_id=dag_id,
+            policy=policy,
+            history_run_limit=history_run_limit,
+        )
         with AirflowClient(history_run_limit=history_run_limit) as source:
             analysis = analyze_dag(
-                dag_id=dag_id,
+                dag_id=request.dag_id,
                 source=source,
-                policy=policy,
+                policy=request.policy,
             )
     except AirflowApiError as exc:
         console.print(f"[bold red]Airflow request failed:[/bold red] {exc}")
