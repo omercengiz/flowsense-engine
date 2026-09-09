@@ -10,7 +10,7 @@ from flowsense.domain import (
     TrendDirection,
 )
 
-ANALYSIS_SCHEMA_VERSION = "1.0"
+ANALYSIS_SCHEMA_VERSION = "1.1"
 
 
 class OutputModel(BaseModel):
@@ -108,8 +108,9 @@ class DiagnosticOutput(OutputModel):
 class AnalysisDocument(OutputModel):
     """Typed representation of the FlowSense analysis output schema."""
 
-    schema_version: Literal["1.0"] = ANALYSIS_SCHEMA_VERSION
+    schema_version: Literal["1.1"] = ANALYSIS_SCHEMA_VERSION
     dag_id: str
+    current_dag_run_id: str | None
     runs_analyzed: int
     overall_severity: Severity
     summary: AnalysisSummaryOutput

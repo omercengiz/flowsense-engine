@@ -114,6 +114,7 @@ class DAGAnalysis:
     handoff_trend_results: dict[tuple[str, str], TrendResult] = field(
         default_factory=dict
     )
+    current_dag_run_id: str | None = None
 
     @property
     def summary(self) -> DAGAnalysisSummary:

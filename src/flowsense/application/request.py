@@ -14,10 +14,14 @@ class AnalysisRequest:
     dag_id: str
     policy: AnalysisPolicy = DEFAULT_ANALYSIS_POLICY
     history_run_limit: int | None = None
+    dag_run_id: str | None = None
 
     def __post_init__(self) -> None:
         if not self.dag_id.strip():
             raise ConfigurationError("dag_id must not be empty.")
+
+        if self.dag_run_id is not None and not self.dag_run_id.strip():
+            raise ConfigurationError("dag_run_id must not be empty.")
 
         if (
             self.history_run_limit is not None

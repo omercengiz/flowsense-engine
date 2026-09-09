@@ -23,6 +23,7 @@ def test_top_level_api_declares_supported_exports() -> None:
     expected_exports = {
         "AirflowApiError",
         "AirflowClient",
+        "AirflowDagRunNotFoundError",
         "AirflowDataError",
         "ANALYSIS_SCHEMA_VERSION",
         "AnalysisPolicy",
