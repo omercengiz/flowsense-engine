@@ -1,5 +1,6 @@
 import os
 import sys
+from unittest.mock import patch
 
 import pytest
 from mcp import ClientSession, StdioServerParameters
@@ -9,7 +10,7 @@ from flowsense import ChangePointResult, TrendResult
 from flowsense.engine.drift import DriftResult
 from flowsense.engine.impact import TaskImpact
 from flowsense.engine.root_cause import RootCauseResult
-from flowsense.mcp.server import serialize_analysis
+from flowsense.mcp.server import analyze_airflow_dag, serialize_analysis
 from flowsense.models import AnalysisDiagnostic, DAGAnalysis
 
 
@@ -49,6 +50,29 @@ async def test_mcp_server_exposes_analyze_tool() -> None:
         tool_names = [tool.name for tool in response.tools]
 
         assert "analyze_airflow_dag" in tool_names
+
+
+def test_analyze_tool_overrides_airflow_history_run_limit() -> None:
+    analysis = DAGAnalysis(
+        dag_id="demo",
+        runs_analyzed=0,
+        overall_severity="NORMAL",
+        primary_origin=None,
+        drift_results={},
+        handoff_drift_results={},
+        task_impacts={},
+        propagation_results=[],
+        dependencies={},
+    )
+
+    with (
+        patch("flowsense.mcp.server.AirflowClient") as client_class,
+        patch("flowsense.mcp.server.analyze_dag", return_value=analysis),
+    ):
+        result = analyze_airflow_dag("demo", history_run_limit=250)
+
+    assert result["dag_id"] == "demo"
+    client_class.assert_called_once_with(history_run_limit=250)
 
 
 def test_serialize_analysis() -> None:
