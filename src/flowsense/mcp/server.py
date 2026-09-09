@@ -26,6 +26,7 @@ def analyze_airflow_dag(
     trend_minimum_directional_consistency: float = 0.6,
     mapped_task_aggregation: MappedTaskAggregation = MappedTaskAggregation.MAX,
     history_run_limit: int | None = None,
+    dag_run_id: str | None = None,
 ) -> dict[str, object]:
     """Analyze an Apache Airflow DAG for temporal drift and propagation."""
     try:
@@ -49,8 +50,12 @@ def analyze_airflow_dag(
                 ),
             ),
             history_run_limit=history_run_limit,
+            dag_run_id=dag_run_id,
         )
-        with AirflowClient(history_run_limit=history_run_limit) as source:
+        with AirflowClient(
+            history_run_limit=history_run_limit,
+            target_dag_run_id=request.dag_run_id,
+        ) as source:
             analysis = analyze_dag(
                 dag_id=request.dag_id,
                 source=source,

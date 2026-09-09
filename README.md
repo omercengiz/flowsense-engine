@@ -195,6 +195,16 @@ The MCP tool exposes the same override as `history_run_limit`. The limit must
 be at least `2` and cannot be lower than `minimum_history`; contradictory
 requests are rejected before FlowSense connects to Airflow.
 
+To investigate or backtest a specific successful DAG run, select it as the
+current observation. FlowSense excludes every newer run from its baseline:
+
+```bash
+flowsense analyze <dag_id> --dag-run-id <dag_run_id>
+```
+
+The MCP tool exposes the same option as `dag_run_id`. Analysis output includes
+`current_dag_run_id`; this field was introduced in output schema version `1.1`.
+
 The JSON document and MCP tool response share the same serialization contract
 and include a `schema_version` field. The serializer is also available from the
 public library API as `flowsense.serialize_analysis`.

@@ -63,6 +63,7 @@ def test_renders_complete_analysis_report() -> None:
             )
         ],
         dependencies={"transform": ["load"], "load": []},
+        current_dag_run_id="run_42",
         diagnostics=[
             AnalysisDiagnostic(
                 code="INSUFFICIENT_TASK_HISTORY",
@@ -101,6 +102,7 @@ def test_renders_complete_analysis_report() -> None:
 
     report = output.getvalue()
     assert "FlowSense Analysis" in report
+    assert "run_42" in report
     assert "Task coverage" in report
     assert "1/3 (33.3%)" in report
     assert "Structural signals" in report

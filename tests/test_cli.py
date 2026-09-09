@@ -126,7 +126,7 @@ def test_analyze_outputs_versioned_json() -> None:
 
     assert result.exit_code == 0
     document = json.loads(result.output)
-    assert document["schema_version"] == "1.0"
+    assert document["schema_version"] == ANALYSIS_SCHEMA_VERSION
     assert document["dag_id"] == "demo"
     assert document["overall_severity"] == "NORMAL"
     render_analysis.assert_not_called()
@@ -146,7 +146,30 @@ def test_analyze_overrides_airflow_history_run_limit() -> None:
         )
 
     assert result.exit_code == 0
-    client_class.assert_called_once_with(history_run_limit=250)
+    client_class.assert_called_once_with(
+        history_run_limit=250,
+        target_dag_run_id=None,
+    )
+
+
+def test_analyze_selects_historical_dag_run() -> None:
+    analysis = _analysis_with_severity(Severity.NORMAL)
+
+    with (
+        patch("flowsense.cli.main.AirflowClient") as client_class,
+        patch("flowsense.cli.main.analyze_dag", return_value=analysis),
+        patch("flowsense.cli.main.render_analysis"),
+    ):
+        result = CliRunner().invoke(
+            app,
+            ["analyze", "demo", "--dag-run-id", "run_42"],
+        )
+
+    assert result.exit_code == 0
+    client_class.assert_called_once_with(
+        history_run_limit=None,
+        target_dag_run_id="run_42",
+    )
 
 
 def test_analyze_rejects_inconsistent_history_settings_before_airflow() -> None:

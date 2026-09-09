@@ -127,6 +127,11 @@ def analyze(
         min=2,
         help="Limit collection to the most recent successful DAG runs.",
     ),
+    dag_run_id: str | None = typer.Option(
+        None,
+        "--dag-run-id",
+        help="Analyze this successful DAG run using only its preceding history.",
+    ),
 ) -> None:
     try:
         policy = AnalysisPolicy(
@@ -154,8 +159,12 @@ def analyze(
             dag_id=dag_id,
             policy=policy,
             history_run_limit=history_run_limit,
+            dag_run_id=dag_run_id,
         )
-        with AirflowClient(history_run_limit=history_run_limit) as source:
+        with AirflowClient(
+            history_run_limit=history_run_limit,
+            target_dag_run_id=request.dag_run_id,
+        ) as source:
             analysis = analyze_dag(
                 dag_id=request.dag_id,
                 source=source,

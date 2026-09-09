@@ -18,6 +18,7 @@ from flowsense.infrastructure.airflow.dto import (
 )
 from flowsense.infrastructure.airflow.exceptions import (
     AirflowApiError,
+    AirflowDagRunNotFoundError,
     AirflowDataError,
 )
 from flowsense.infrastructure.airflow.mapper import (
@@ -44,6 +45,7 @@ class AirflowClient:
         max_retries: int | None = None,
         retry_backoff: float | None = None,
         history_run_limit: int | None = None,
+        target_dag_run_id: str | None = None,
         http_client: httpx.Client | None = None,
         sleep: Callable[[float], None] | None = None,
     ):
@@ -71,6 +73,7 @@ class AirflowClient:
             if history_run_limit is not None
             else config.history_run_limit
         )
+        self.target_dag_run_id = target_dag_run_id
 
         if self.api_version not in {"v1", "v2"}:
             raise ConfigurationError("api_version must be 'v1' or 'v2'")
@@ -87,6 +90,8 @@ class AirflowClient:
             raise ConfigurationError("retry_backoff must be non-negative")
         if self.history_run_limit < 2:
             raise ConfigurationError("history_run_limit must be at least 2")
+        if self.target_dag_run_id is not None and not self.target_dag_run_id.strip():
+            raise ConfigurationError("target_dag_run_id must not be empty")
 
         self._owns_http_client = http_client is None
         self._http_client = http_client or httpx.Client(
@@ -309,7 +314,22 @@ class AirflowClient:
 
         successful_dag_runs = [run for run in dag_runs if run.state == "success"]
         successful_dag_runs.sort(key=run_timestamp)
-        selected_dag_runs = successful_dag_runs[-self.history_run_limit :]
+        if self.target_dag_run_id is None:
+            selected_dag_runs = successful_dag_runs[-self.history_run_limit :]
+        else:
+            target_index = next(
+                (
+                    index
+                    for index, run in enumerate(successful_dag_runs)
+                    if run.dag_run_id == self.target_dag_run_id
+                ),
+                None,
+            )
+            if target_index is None:
+                raise AirflowDagRunNotFoundError(dag_id, self.target_dag_run_id)
+
+            window_start = max(0, target_index - self.history_run_limit + 1)
+            selected_dag_runs = successful_dag_runs[window_start : target_index + 1]
 
         task_runs: list[TaskRun] = []
 
