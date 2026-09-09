@@ -3,9 +3,31 @@ from unittest.mock import MagicMock, patch
 
 from typer.testing import CliRunner
 
-from flowsense import ConfigurationError, DAGAnalysis, Severity
+from flowsense import ANALYSIS_SCHEMA_VERSION, ConfigurationError, DAGAnalysis, Severity
 from flowsense.cli.main import app
 from flowsense.infrastructure.airflow import AirflowApiError
+
+
+def test_schema_outputs_versioned_json_schema_without_airflow() -> None:
+    with patch("flowsense.cli.main.AirflowClient") as client_class:
+        result = CliRunner().invoke(app, ["schema"])
+
+    assert result.exit_code == 0
+    schema = json.loads(result.output)
+    assert schema["properties"]["schema_version"]["const"] == (ANALYSIS_SCHEMA_VERSION)
+    assert schema["title"] == "AnalysisDocument"
+    client_class.assert_not_called()
+
+
+def test_schema_output_is_deterministic() -> None:
+    runner = CliRunner()
+
+    first = runner.invoke(app, ["schema"])
+    second = runner.invoke(app, ["schema"])
+
+    assert first.exit_code == 0
+    assert second.exit_code == 0
+    assert first.output == second.output
 
 
 def test_analyze_reports_airflow_api_errors() -> None:
