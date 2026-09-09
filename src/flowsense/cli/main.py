@@ -22,6 +22,7 @@ from flowsense.domain import (
     severity_meets_threshold,
 )
 from flowsense.infrastructure.airflow import AirflowApiError, AirflowClient
+from flowsense.version import __version__
 
 app = typer.Typer(
     name="flowsense",
@@ -31,6 +32,12 @@ app = typer.Typer(
 
 console = Console()
 ANALYSIS_THRESHOLD_EXIT_CODE = 2
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        typer.echo(__version__)
+        raise typer.Exit()
 
 
 class OutputFormat(StrEnum):
@@ -45,7 +52,17 @@ class FailureThreshold(StrEnum):
 
 
 @app.callback()
-def main() -> None:
+def main(
+    version: Annotated[
+        bool | None,
+        typer.Option(
+            "--version",
+            callback=_version_callback,
+            is_eager=True,
+            help="Show the installed FlowSense version and exit.",
+        ),
+    ] = None,
+) -> None:
     """FlowSense CLI."""
 
 
