@@ -30,6 +30,8 @@ def _render_summary(console: Console, analysis: DAGAnalysis) -> None:
     summary.add_column(style="bold")
     summary.add_column()
     summary.add_row("DAG", analysis.dag_id)
+    if analysis.current_dag_run_id is not None:
+        summary.add_row("Current DAG run", analysis.current_dag_run_id)
     summary.add_row("Runs analyzed", str(analysis.runs_analyzed))
     summary.add_row("Overall severity", _severity_text(analysis.overall_severity))
     summary.add_row(

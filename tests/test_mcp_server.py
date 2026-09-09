@@ -6,7 +6,12 @@ import pytest
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from flowsense import ChangePointResult, ConfigurationError, TrendResult
+from flowsense import (
+    ANALYSIS_SCHEMA_VERSION,
+    ChangePointResult,
+    ConfigurationError,
+    TrendResult,
+)
 from flowsense.engine.drift import DriftResult
 from flowsense.engine.impact import TaskImpact
 from flowsense.engine.root_cause import RootCauseResult
@@ -72,7 +77,10 @@ def test_analyze_tool_overrides_airflow_history_run_limit() -> None:
         result = analyze_airflow_dag("demo", history_run_limit=250)
 
     assert result["dag_id"] == "demo"
-    client_class.assert_called_once_with(history_run_limit=250)
+    client_class.assert_called_once_with(
+        history_run_limit=250,
+        target_dag_run_id=None,
+    )
 
 
 def test_analyze_tool_translates_expected_errors() -> None:
@@ -202,7 +210,7 @@ def test_serialize_analysis() -> None:
 
     result = serialize_analysis(analysis)
 
-    assert result["schema_version"] == "1.0"
+    assert result["schema_version"] == ANALYSIS_SCHEMA_VERSION
     assert result["dag_id"] == "demo"
     assert result["runs_analyzed"] == 5
     assert result["overall_severity"] == "CRITICAL"

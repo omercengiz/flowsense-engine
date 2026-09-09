@@ -22,6 +22,11 @@ def test_rejects_blank_dag_id() -> None:
         AnalysisRequest(dag_id="  ")
 
 
+def test_rejects_blank_dag_run_id() -> None:
+    with pytest.raises(ConfigurationError, match="dag_run_id"):
+        AnalysisRequest(dag_id="demo", dag_run_id="  ")
+
+
 def test_rejects_history_limit_below_minimum_history() -> None:
     with pytest.raises(ConfigurationError, match="history_run_limit"):
         AnalysisRequest(

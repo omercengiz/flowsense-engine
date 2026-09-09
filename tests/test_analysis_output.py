@@ -43,6 +43,7 @@ def test_serializer_preserves_typed_document_contract() -> None:
     document = build_analysis_document(_empty_analysis())
 
     assert serialize_analysis(_empty_analysis()) == document.model_dump(mode="json")
+    assert serialize_analysis(_empty_analysis())["current_dag_run_id"] is None
 
 
 def test_typed_document_preserves_nullable_change_percent() -> None:

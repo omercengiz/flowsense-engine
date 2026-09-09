@@ -4,7 +4,11 @@ import httpx
 import pytest
 
 from flowsense.config import AirflowConfig
-from flowsense.infrastructure.airflow import AirflowApiError, AirflowDataError
+from flowsense.infrastructure.airflow import (
+    AirflowApiError,
+    AirflowDagRunNotFoundError,
+    AirflowDataError,
+)
 from flowsense.infrastructure.airflow.client import PAGE_SIZE, AirflowClient
 
 
@@ -183,6 +187,56 @@ def test_collect_task_runs_limits_to_latest_successful_dag_runs(
     ]
 
 
+def test_collect_task_runs_ends_history_at_target_dag_run(
+    client: AirflowClient,
+) -> None:
+    client.history_run_limit = 2
+    client.target_dag_run_id = "middle"
+    client.get_dag_runs = MagicMock(
+        return_value={
+            "dag_runs": [
+                {
+                    "dag_run_id": run_id,
+                    "state": "success",
+                    "logical_date": f"2026-01-0{day}T00:00:00Z",
+                }
+                for day, run_id in enumerate(
+                    ["oldest", "middle", "newest"],
+                    start=1,
+                )
+            ]
+        }
+    )
+    client.get_task_instances = MagicMock(
+        side_effect=lambda dag_id, dag_run_id: {
+            "task_instances": [
+                {
+                    "task_id": f"task_{dag_id}_{dag_run_id}",
+                    "state": "success",
+                    "duration": 1.0,
+                }
+            ]
+        }
+    )
+
+    task_runs = client.collect_task_runs("demo")
+
+    assert [run.dag_run_id for run in task_runs] == ["oldest", "middle"]
+
+
+def test_collect_task_runs_rejects_missing_target_dag_run(
+    client: AirflowClient,
+) -> None:
+    client.target_dag_run_id = "missing"
+    client.get_dag_runs = MagicMock(return_value={"dag_runs": []})
+    client.get_task_instances = MagicMock()
+
+    with pytest.raises(AirflowDagRunNotFoundError, match="missing"):
+        client.collect_task_runs("demo")
+
+    client.get_task_instances.assert_not_called()
+
+
 def test_rejects_history_run_limit_below_two(http_client: MagicMock) -> None:
     with (
         patch(
@@ -196,6 +250,21 @@ def test_rejects_history_run_limit_below_two(http_client: MagicMock) -> None:
         pytest.raises(ValueError, match="history_run_limit"),
     ):
         AirflowClient(history_run_limit=1, http_client=http_client)
+
+
+def test_rejects_blank_target_dag_run_id(http_client: MagicMock) -> None:
+    with (
+        patch(
+            "flowsense.infrastructure.airflow.client.get_airflow_config",
+            return_value=AirflowConfig(
+                base_url="http://airflow.test",
+                username="airflow",
+                password="airflow",
+            ),
+        ),
+        pytest.raises(ValueError, match="target_dag_run_id"),
+    ):
+        AirflowClient(target_dag_run_id=" ", http_client=http_client)
 
 
 def test_wraps_http_status_errors_without_response_body(

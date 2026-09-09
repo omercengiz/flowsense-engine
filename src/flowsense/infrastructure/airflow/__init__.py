@@ -1,7 +1,13 @@
 from flowsense.infrastructure.airflow.client import AirflowClient
 from flowsense.infrastructure.airflow.exceptions import (
     AirflowApiError,
+    AirflowDagRunNotFoundError,
     AirflowDataError,
 )
 
-__all__ = ["AirflowApiError", "AirflowClient", "AirflowDataError"]
+__all__ = [
+    "AirflowApiError",
+    "AirflowClient",
+    "AirflowDagRunNotFoundError",
+    "AirflowDataError",
+]

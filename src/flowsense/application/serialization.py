@@ -32,6 +32,7 @@ def build_analysis_document(analysis: DAGAnalysis) -> AnalysisDocument:
 
     return AnalysisDocument(
         dag_id=analysis.dag_id,
+        current_dag_run_id=analysis.current_dag_run_id,
         runs_analyzed=analysis.runs_analyzed,
         overall_severity=analysis.overall_severity,
         summary=AnalysisSummaryOutput(

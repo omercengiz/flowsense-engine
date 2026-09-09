@@ -34,6 +34,7 @@ from flowsense.domain import (
 from flowsense.infrastructure.airflow import (
     AirflowApiError,
     AirflowClient,
+    AirflowDagRunNotFoundError,
     AirflowDataError,
 )
 from flowsense.version import __version__
@@ -43,6 +44,7 @@ __all__ = [
     "DEFAULT_ANALYSIS_POLICY",
     "AirflowApiError",
     "AirflowClient",
+    "AirflowDagRunNotFoundError",
     "AirflowDataError",
     "AnalysisDiagnostic",
     "AnalysisDocument",

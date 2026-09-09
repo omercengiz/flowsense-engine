@@ -45,6 +45,7 @@ def test_analyze_dag_identifies_primary_origin() -> None:
     analysis = analyze_dag("demo", client)
 
     assert analysis.overall_severity == "CRITICAL"
+    assert analysis.current_dag_run_id == "run_5"
     assert analysis.primary_origin is not None
     assert analysis.primary_origin.task_id == "transform"
     assert len(analysis.propagation_results) == 1

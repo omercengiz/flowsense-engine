@@ -45,6 +45,7 @@ def analyze_dag(
     return DAGAnalysis(
         dag_id=dag_id,
         runs_analyzed=len({run.dag_run_id for run in task_runs}),
+        current_dag_run_id=(task_runs[-1].dag_run_id if task_runs else None),
         overall_severity=determine_overall_severity(
             task_analysis.drift_results,
             handoff_analysis.drift_results,
