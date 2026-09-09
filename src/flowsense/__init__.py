@@ -3,6 +3,7 @@ from importlib.metadata import PackageNotFoundError, version
 from flowsense.application import (
     ANALYSIS_SCHEMA_VERSION,
     AnalysisDocument,
+    AnalysisRequest,
     DAGDataSource,
     analysis_json_schema,
     analyze_dag,
@@ -52,6 +53,7 @@ __all__ = [
     "AnalysisDiagnostic",
     "AnalysisDocument",
     "AnalysisPolicy",
+    "AnalysisRequest",
     "ChangeDirection",
     "ChangePointResult",
     "ConfigurationError",
