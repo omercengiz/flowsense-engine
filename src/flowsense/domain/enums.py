@@ -37,3 +37,11 @@ SEVERITY_SCORE: dict[Severity, int] = {
     Severity.HIGH: 2,
     Severity.CRITICAL: 3,
 }
+
+
+def severity_meets_threshold(
+    severity: Severity,
+    threshold: Severity,
+) -> bool:
+    """Return whether a severity is at or above the requested threshold."""
+    return SEVERITY_SCORE[severity] >= SEVERITY_SCORE[threshold]
