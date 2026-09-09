@@ -196,6 +196,15 @@ validated Pydantic `AnalysisDocument`. Its versioned JSON Schema is available
 through `flowsense.analysis_json_schema()`, allowing consumers to validate or
 generate models for the CLI and MCP response contract.
 
+The same schema can be emitted without connecting to Airflow:
+
+```bash
+flowsense schema > flowsense-analysis.schema.json
+```
+
+This output is deterministic and can be used in CI contract checks, editor
+tooling, or client code generation.
+
 ## Library API
 
 FlowSense can also be used as a Python library through its supported top-level

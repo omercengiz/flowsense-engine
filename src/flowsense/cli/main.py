@@ -7,7 +7,7 @@ from typing import Annotated
 import typer
 from rich.console import Console
 
-from flowsense.application import analyze_dag, serialize_analysis
+from flowsense.application import analysis_json_schema, analyze_dag, serialize_analysis
 from flowsense.cli.report import render_analysis
 from flowsense.domain import (
     AnalysisPolicy,
@@ -42,6 +42,19 @@ class FailureThreshold(StrEnum):
 @app.callback()
 def main() -> None:
     """FlowSense CLI."""
+
+
+@app.command("schema")
+def show_schema() -> None:
+    """Print the versioned analysis output JSON Schema."""
+    typer.echo(
+        json.dumps(
+            analysis_json_schema(),
+            indent=2,
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
 
 
 @app.command()
