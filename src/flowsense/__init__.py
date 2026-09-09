@@ -1,5 +1,3 @@
-from importlib.metadata import PackageNotFoundError, version
-
 from flowsense.application import (
     ANALYSIS_SCHEMA_VERSION,
     AnalysisDocument,
@@ -38,11 +36,7 @@ from flowsense.infrastructure.airflow import (
     AirflowClient,
     AirflowDataError,
 )
-
-try:
-    __version__ = version("flowsense")
-except PackageNotFoundError:
-    __version__ = "0.0.0"
+from flowsense.version import __version__
 
 __all__ = [
     "ANALYSIS_SCHEMA_VERSION",

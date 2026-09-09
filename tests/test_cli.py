@@ -6,6 +6,14 @@ from typer.testing import CliRunner
 from flowsense import ANALYSIS_SCHEMA_VERSION, ConfigurationError, DAGAnalysis, Severity
 from flowsense.cli.main import app
 from flowsense.infrastructure.airflow import AirflowApiError
+from flowsense.version import __version__
+
+
+def test_version_outputs_installed_package_version() -> None:
+    result = CliRunner().invoke(app, ["--version"])
+
+    assert result.exit_code == 0
+    assert result.output.strip() == __version__
 
 
 def test_schema_outputs_versioned_json_schema_without_airflow() -> None:
