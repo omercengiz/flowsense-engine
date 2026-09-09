@@ -464,7 +464,7 @@ def test_analyze_dag_does_not_hide_unexpected_value_errors() -> None:
 
     with (
         patch(
-            "flowsense.application.analyzer.calculate_drift",
+            "flowsense.application.pipeline.calculate_drift",
             side_effect=ValueError("unexpected failure"),
         ),
         pytest.raises(ValueError, match="unexpected failure"),
