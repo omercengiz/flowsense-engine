@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import time
+from collections.abc import Callable
+from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
 from typing import Any, Literal, Self
 
 import httpx
@@ -20,6 +24,7 @@ from flowsense.infrastructure.airflow.mapper import (
 PAGE_SIZE = 100
 AirflowApiVersion = Literal["v1", "v2"]
 AirflowAuthMode = Literal["basic", "token"]
+RETRYABLE_STATUS_CODES = frozenset({429, 502, 503, 504})
 
 
 class AirflowClient:
@@ -30,7 +35,12 @@ class AirflowClient:
         password: str | None = None,
         api_version: AirflowApiVersion | None = None,
         auth_mode: AirflowAuthMode | None = None,
+        connect_timeout: float | None = None,
+        read_timeout: float | None = None,
+        max_retries: int | None = None,
+        retry_backoff: float | None = None,
         http_client: httpx.Client | None = None,
+        sleep: Callable[[float], None] | None = None,
     ):
         config = get_airflow_config()
 
@@ -39,15 +49,43 @@ class AirflowClient:
         self.password = password or config.password
         self.api_version = api_version or config.api_version
         self.auth_mode = auth_mode or config.auth_mode
+        self.connect_timeout = (
+            connect_timeout if connect_timeout is not None else config.connect_timeout
+        )
+        self.read_timeout = (
+            read_timeout if read_timeout is not None else config.read_timeout
+        )
+        self.max_retries = (
+            max_retries if max_retries is not None else config.max_retries
+        )
+        self.retry_backoff = (
+            retry_backoff if retry_backoff is not None else config.retry_backoff
+        )
 
         if self.api_version not in {"v1", "v2"}:
             raise ValueError("api_version must be 'v1' or 'v2'")
 
         if self.auth_mode not in {"basic", "token"}:
             raise ValueError("auth_mode must be 'basic' or 'token'")
+        if self.connect_timeout <= 0:
+            raise ValueError("connect_timeout must be positive")
+        if self.read_timeout <= 0:
+            raise ValueError("read_timeout must be positive")
+        if self.max_retries < 0:
+            raise ValueError("max_retries must be non-negative")
+        if self.retry_backoff < 0:
+            raise ValueError("retry_backoff must be non-negative")
 
         self._owns_http_client = http_client is None
-        self._http_client = http_client or httpx.Client(timeout=10.0)
+        self._http_client = http_client or httpx.Client(
+            timeout=httpx.Timeout(
+                connect=self.connect_timeout,
+                read=self.read_timeout,
+                write=self.read_timeout,
+                pool=self.connect_timeout,
+            )
+        )
+        self._sleep = sleep or time.sleep
         self._token: str | None = None
 
     def __enter__(self) -> Self:
@@ -68,26 +106,63 @@ class AirflowClient:
     ) -> httpx.Response:
         request_kwargs: dict[str, Any] = dict(kwargs)
 
-        try:
-            response = self._http_client.request(
-                method=method,
-                url=url,
-                **request_kwargs,
-            )
-            response.raise_for_status()
-        except httpx.HTTPStatusError as exc:
-            raise AirflowApiError(
-                method=method,
-                endpoint=exc.request.url.path,
-                status_code=exc.response.status_code,
-            ) from exc
-        except httpx.RequestError as exc:
-            raise AirflowApiError(
-                method=method,
-                endpoint=exc.request.url.path,
-            ) from exc
+        for attempt in range(self.max_retries + 1):
+            try:
+                response = self._http_client.request(
+                    method=method,
+                    url=url,
+                    **request_kwargs,
+                )
+            except httpx.RequestError as exc:
+                if attempt < self.max_retries:
+                    self._sleep(self._backoff_delay(attempt))
+                    continue
 
-        return response
+                raise AirflowApiError(
+                    method=method,
+                    endpoint=exc.request.url.path,
+                ) from exc
+
+            if (
+                response.status_code in RETRYABLE_STATUS_CODES
+                and attempt < self.max_retries
+            ):
+                delay = self._retry_delay(response, attempt)
+                response.close()
+                self._sleep(delay)
+                continue
+
+            try:
+                response.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                raise AirflowApiError(
+                    method=method,
+                    endpoint=exc.request.url.path,
+                    status_code=exc.response.status_code,
+                ) from exc
+
+            return response
+
+        raise RuntimeError("Airflow request retry loop exited unexpectedly")
+
+    def _backoff_delay(self, attempt: int) -> float:
+        return self.retry_backoff * (2**attempt)
+
+    def _retry_delay(self, response: httpx.Response, attempt: int) -> float:
+        retry_after = response.headers.get("Retry-After")
+        if retry_after is None:
+            return self._backoff_delay(attempt)
+
+        try:
+            return max(0.0, float(retry_after))
+        except ValueError:
+            try:
+                retry_at = parsedate_to_datetime(retry_after)
+                if retry_at.tzinfo is None:
+                    retry_at = retry_at.replace(tzinfo=UTC)
+                return max(0.0, (retry_at - datetime.now(UTC)).total_seconds())
+            except (TypeError, ValueError, OverflowError):
+                return self._backoff_delay(attempt)
 
     def _get_token(self) -> str:
         if self._token:

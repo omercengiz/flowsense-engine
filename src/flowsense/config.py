@@ -11,6 +11,10 @@ class AirflowConfig:
     password: str
     api_version: str = "v2"
     auth_mode: str = "token"
+    connect_timeout: float = 10.0
+    read_timeout: float = 10.0
+    max_retries: int = 2
+    retry_backoff: float = 0.5
 
 
 def get_airflow_config() -> AirflowConfig:
@@ -23,6 +27,10 @@ def get_airflow_config() -> AirflowConfig:
     password = os.getenv("AIRFLOW_PASSWORD")
     api_version = os.getenv("AIRFLOW_API_VERSION", "v2")
     auth_mode = os.getenv("AIRFLOW_AUTH_MODE", "token")
+    connect_timeout = float(os.getenv("AIRFLOW_CONNECT_TIMEOUT", "10"))
+    read_timeout = float(os.getenv("AIRFLOW_READ_TIMEOUT", "10"))
+    max_retries = int(os.getenv("AIRFLOW_MAX_RETRIES", "2"))
+    retry_backoff = float(os.getenv("AIRFLOW_RETRY_BACKOFF", "0.5"))
 
     if not username:
         raise RuntimeError("AIRFLOW_USERNAME environment variable is required.")
@@ -36,4 +44,8 @@ def get_airflow_config() -> AirflowConfig:
         password=password,
         api_version=api_version,
         auth_mode=auth_mode,
+        connect_timeout=connect_timeout,
+        read_timeout=read_timeout,
+        max_retries=max_retries,
+        retry_backoff=retry_backoff,
     )
