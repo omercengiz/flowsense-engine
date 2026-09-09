@@ -7,15 +7,19 @@ from email.utils import parsedate_to_datetime
 from typing import Any, Literal, Self
 
 import httpx
+from pydantic import ValidationError
 
 from flowsense.config import get_airflow_config
-from flowsense.domain import TaskRun
+from flowsense.domain import ConfigurationError, TaskRun
 from flowsense.infrastructure.airflow.dto import (
     AirflowDagRunDTO,
     AirflowTaskDTO,
     AirflowTaskInstanceDTO,
 )
-from flowsense.infrastructure.airflow.exceptions import AirflowApiError
+from flowsense.infrastructure.airflow.exceptions import (
+    AirflowApiError,
+    AirflowDataError,
+)
 from flowsense.infrastructure.airflow.mapper import (
     map_dependencies,
     map_task_instance,
@@ -69,20 +73,20 @@ class AirflowClient:
         )
 
         if self.api_version not in {"v1", "v2"}:
-            raise ValueError("api_version must be 'v1' or 'v2'")
+            raise ConfigurationError("api_version must be 'v1' or 'v2'")
 
         if self.auth_mode not in {"basic", "token"}:
-            raise ValueError("auth_mode must be 'basic' or 'token'")
+            raise ConfigurationError("auth_mode must be 'basic' or 'token'")
         if self.connect_timeout <= 0:
-            raise ValueError("connect_timeout must be positive")
+            raise ConfigurationError("connect_timeout must be positive")
         if self.read_timeout <= 0:
-            raise ValueError("read_timeout must be positive")
+            raise ConfigurationError("read_timeout must be positive")
         if self.max_retries < 0:
-            raise ValueError("max_retries must be non-negative")
+            raise ConfigurationError("max_retries must be non-negative")
         if self.retry_backoff < 0:
-            raise ValueError("retry_backoff must be non-negative")
+            raise ConfigurationError("retry_backoff must be non-negative")
         if self.history_run_limit < 2:
-            raise ValueError("history_run_limit must be at least 2")
+            raise ConfigurationError("history_run_limit must be at least 2")
 
         self._owns_http_client = http_client is None
         self._http_client = http_client or httpx.Client(
@@ -185,9 +189,27 @@ class AirflowClient:
             },
         )
 
-        token: str = response.json()["access_token"]
+        payload = self._response_json(response, "authentication response")
+        token = payload.get("access_token")
+        if not isinstance(token, str) or not token:
+            raise AirflowDataError("authentication response")
         self._token = token
         return token
+
+    @staticmethod
+    def _response_json(
+        response: httpx.Response,
+        resource: str,
+    ) -> dict[str, Any]:
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            raise AirflowDataError(resource) from exc
+
+        if not isinstance(payload, dict):
+            raise AirflowDataError(resource)
+
+        return payload
 
     def _headers(self) -> dict[str, str]:
         headers = {"Accept": "application/json"}
@@ -230,10 +252,14 @@ class AirflowClient:
                 **request_kwargs,
             )
 
-            last_page = response.json()
-            page_items = last_page[collection_key]
+            last_page = self._response_json(response, collection_key)
+            page_items = last_page.get(collection_key)
+            if not isinstance(page_items, list):
+                raise AirflowDataError(collection_key)
             items.extend(page_items)
             total_entries = last_page.get("total_entries")
+            if total_entries is not None and not isinstance(total_entries, int):
+                raise AirflowDataError(collection_key)
 
             if not page_items:
                 break
@@ -270,9 +296,12 @@ class AirflowClient:
 
     def collect_task_runs(self, dag_id: str) -> list[TaskRun]:
         response = self.get_dag_runs(dag_id)
-        dag_runs = [
-            AirflowDagRunDTO.model_validate(item) for item in response["dag_runs"]
-        ]
+        try:
+            dag_runs = [
+                AirflowDagRunDTO.model_validate(item) for item in response["dag_runs"]
+            ]
+        except ValidationError as exc:
+            raise AirflowDataError("DAG run") from exc
 
         def run_timestamp(run: AirflowDagRunDTO) -> float:
             timestamp = run.run_after or run.logical_date or run.queued_at
@@ -289,10 +318,13 @@ class AirflowClient:
                 dag_id=dag_id,
                 dag_run_id=dag_run.dag_run_id,
             )
-            task_instances = [
-                AirflowTaskInstanceDTO.model_validate(item)
-                for item in response["task_instances"]
-            ]
+            try:
+                task_instances = [
+                    AirflowTaskInstanceDTO.model_validate(item)
+                    for item in response["task_instances"]
+                ]
+            except ValidationError as exc:
+                raise AirflowDataError("task instance") from exc
 
             task_runs.extend(
                 map_task_instance(
@@ -314,5 +346,8 @@ class AirflowClient:
 
     def get_dag_dependencies(self, dag_id: str) -> dict[str, list[str]]:
         response = self.get_dag_tasks(dag_id)
-        tasks = [AirflowTaskDTO.model_validate(item) for item in response["tasks"]]
+        try:
+            tasks = [AirflowTaskDTO.model_validate(item) for item in response["tasks"]]
+        except ValidationError as exc:
+            raise AirflowDataError("DAG task") from exc
         return map_dependencies(tasks)

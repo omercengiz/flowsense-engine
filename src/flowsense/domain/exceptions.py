@@ -2,6 +2,10 @@ class FlowSenseError(Exception):
     """Base exception for expected FlowSense failures."""
 
 
+class ConfigurationError(FlowSenseError, ValueError):
+    """Raised when FlowSense configuration is missing or invalid."""
+
+
 class InsufficientHistoryError(FlowSenseError, ValueError):
     def __init__(
         self,

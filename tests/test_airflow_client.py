@@ -4,7 +4,7 @@ import httpx
 import pytest
 
 from flowsense.config import AirflowConfig
-from flowsense.infrastructure.airflow import AirflowApiError
+from flowsense.infrastructure.airflow import AirflowApiError, AirflowDataError
 from flowsense.infrastructure.airflow.client import PAGE_SIZE, AirflowClient
 
 
@@ -219,3 +219,26 @@ def test_wraps_http_status_errors_without_response_body(
     assert exc_info.value.endpoint == "/api/v2/dags/demo/dagRuns"
     assert exc_info.value.status_code == 503
     assert "internal server details" not in str(exc_info.value)
+
+
+def test_wraps_invalid_paginated_json_as_airflow_data_error(
+    client: AirflowClient,
+    http_client: MagicMock,
+) -> None:
+    response = MagicMock()
+    response.json.side_effect = ValueError("invalid JSON containing internals")
+    http_client.request.return_value = response
+
+    with pytest.raises(AirflowDataError, match="dag_runs") as exc_info:
+        client.get_dag_runs("demo")
+
+    assert "internals" not in str(exc_info.value)
+
+
+def test_wraps_invalid_dag_run_schema_as_airflow_data_error(
+    client: AirflowClient,
+) -> None:
+    client.get_dag_runs = MagicMock(return_value={"dag_runs": [{"state": "success"}]})
+
+    with pytest.raises(AirflowDataError, match="DAG run"):
+        client.collect_task_runs("demo")

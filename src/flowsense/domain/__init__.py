@@ -7,6 +7,7 @@ from flowsense.domain.enums import (
     severity_meets_threshold,
 )
 from flowsense.domain.exceptions import (
+    ConfigurationError,
     FlowSenseError,
     InsufficientHistoryError,
     InvalidTaskTimingError,
@@ -31,6 +32,7 @@ __all__ = [
     "AnalysisPolicy",
     "ChangeDirection",
     "ChangePointResult",
+    "ConfigurationError",
     "DAGAnalysis",
     "DAGAnalysisSummary",
     "DriftResult",
