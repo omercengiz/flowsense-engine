@@ -89,6 +89,7 @@ Propagation and Root-Cause Analysis
 ## Installation
 
 FlowSense currently requires Python 3.12 or newer.
+Python 3.12 and 3.13 are covered by the CI test matrix.
 
 Clone the repository:
 
@@ -103,6 +104,12 @@ Create a virtual environment and install the project:
 uv venv --python 3.12
 source .venv/bin/activate
 uv pip install -e ".[dev,mcp]"
+```
+
+Check the installed package version:
+
+```bash
+flowsense --version
 ```
 
 ## Configuration
