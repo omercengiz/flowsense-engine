@@ -2,7 +2,7 @@
 
 Temporal drift, anomaly detection, and dependency-aware propagation analysis for Apache Airflow.
 
-Current package release: `0.2.0`. See [CHANGELOG.md](CHANGELOG.md) for release
+Current package release: `0.2.1`. See [CHANGELOG.md](CHANGELOG.md) for release
 notes and [docs/releasing.md](docs/releasing.md) for the release checklist.
 
 FlowSense analyzes historical DAG executions to identify abnormal task behavior and trace how anomalies propagate through downstream dependencies.
@@ -108,6 +108,15 @@ uv venv --python 3.12
 source .venv/bin/activate
 uv pip install -e ".[dev,mcp]"
 ```
+
+Once published on PyPI, install the distribution with:
+
+```bash
+pip install flowsense-engine
+```
+
+The distribution name is `flowsense-engine`; Python imports and CLI commands
+remain `flowsense`.
 
 Check the installed package version:
 

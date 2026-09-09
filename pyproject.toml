@@ -1,6 +1,6 @@
 [project]
-name = "flowsense"
-version = "0.2.0"
+name = "flowsense-engine"
+version = "0.2.1"
 description = "Temporal drift and anomaly detection for Apache Airflow"
 readme = "README.md"
 license = "Apache-2.0"
@@ -52,6 +52,7 @@ flowsense-mcp = "flowsense.mcp.server:main"
 Homepage = "https://github.com/omercengiz/flowsense-engine"
 Issues = "https://github.com/omercengiz/flowsense-engine/issues"
 Repository = "https://github.com/omercengiz/flowsense-engine"
+Changelog = "https://github.com/omercengiz/flowsense-engine/blob/master/CHANGELOG.md"
 
 [build-system]
 requires = ["setuptools>=75"]
