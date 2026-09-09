@@ -21,6 +21,7 @@ def client(http_client: MagicMock) -> AirflowClient:
             base_url="http://airflow.test",
             username="airflow",
             password="airflow",
+            max_retries=0,
         ),
     ):
         airflow_client = AirflowClient(http_client=http_client)
