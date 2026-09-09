@@ -3,8 +3,8 @@ from __future__ import annotations
 from mcp.server import MCPServer
 
 from flowsense.application import analyze_dag, serialize_analysis
-from flowsense.domain import AnalysisPolicy, MappedTaskAggregation
-from flowsense.infrastructure.airflow import AirflowApiError, AirflowClient
+from flowsense.domain import AnalysisPolicy, FlowSenseError, MappedTaskAggregation
+from flowsense.infrastructure.airflow import AirflowClient
 
 mcp = MCPServer("FlowSense Engine")
 
@@ -53,7 +53,7 @@ def analyze_airflow_dag(
                     ),
                 ),
             )
-    except AirflowApiError as exc:
+    except FlowSenseError as exc:
         raise RuntimeError(str(exc)) from exc
 
     return serialize_analysis(analysis)

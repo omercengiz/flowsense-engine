@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from typer.testing import CliRunner
 
-from flowsense import DAGAnalysis, Severity
+from flowsense import ConfigurationError, DAGAnalysis, Severity
 from flowsense.cli.main import app
 from flowsense.infrastructure.airflow import AirflowApiError
 
@@ -22,6 +22,19 @@ def test_analyze_reports_airflow_api_errors() -> None:
     assert result.exit_code == 1
     assert "Airflow request failed" in result.output
     assert "503" in result.output
+
+
+def test_analyze_reports_configuration_errors_without_traceback() -> None:
+    with patch(
+        "flowsense.cli.main.AirflowClient",
+        side_effect=ConfigurationError("AIRFLOW_USERNAME is required."),
+    ):
+        result = CliRunner().invoke(app, ["analyze", "demo"])
+
+    assert result.exit_code == 1
+    assert "Analysis failed" in result.output
+    assert "AIRFLOW_USERNAME is required" in result.output
+    assert "Traceback" not in result.output
 
 
 def test_analyze_builds_structural_analysis_policy_from_options() -> None:

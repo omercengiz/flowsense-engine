@@ -23,10 +23,12 @@ def test_top_level_api_declares_supported_exports() -> None:
     expected_exports = {
         "AirflowApiError",
         "AirflowClient",
+        "AirflowDataError",
         "ANALYSIS_SCHEMA_VERSION",
         "AnalysisPolicy",
         "ChangeDirection",
         "ChangePointResult",
+        "ConfigurationError",
         "DAGAnalysis",
         "DAGAnalysisSummary",
         "DAGDataSource",

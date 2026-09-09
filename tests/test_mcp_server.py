@@ -6,7 +6,7 @@ import pytest
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from flowsense import ChangePointResult, TrendResult
+from flowsense import ChangePointResult, ConfigurationError, TrendResult
 from flowsense.engine.drift import DriftResult
 from flowsense.engine.impact import TaskImpact
 from flowsense.engine.root_cause import RootCauseResult
@@ -73,6 +73,17 @@ def test_analyze_tool_overrides_airflow_history_run_limit() -> None:
 
     assert result["dag_id"] == "demo"
     client_class.assert_called_once_with(history_run_limit=250)
+
+
+def test_analyze_tool_translates_expected_errors() -> None:
+    with (
+        patch(
+            "flowsense.mcp.server.AirflowClient",
+            side_effect=ConfigurationError("AIRFLOW_USERNAME is required."),
+        ),
+        pytest.raises(RuntimeError, match="AIRFLOW_USERNAME is required"),
+    ):
+        analyze_airflow_dag("demo")
 
 
 def test_serialize_analysis() -> None:

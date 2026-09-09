@@ -245,6 +245,11 @@ Custom data sources can implement the `DAGDataSource` protocol and be passed to
 API. Imports from internal packages such as `flowsense.engine` should be treated
 as implementation details and may change before version 1.0.
 
+Expected operational failures derive from `FlowSenseError`. Library consumers
+can catch `ConfigurationError`, `AirflowApiError`, or `AirflowDataError` for
+more specific handling. CLI failures return exit code `1`; MCP converts these
+failures into tool errors without exposing response bodies or parser details.
+
 ## MCP Server
 
 Start the FlowSense MCP server over stdio:

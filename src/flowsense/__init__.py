@@ -12,6 +12,7 @@ from flowsense.domain import (
     AnalysisPolicy,
     ChangeDirection,
     ChangePointResult,
+    ConfigurationError,
     DAGAnalysis,
     DAGAnalysisSummary,
     DriftResult,
@@ -28,7 +29,11 @@ from flowsense.domain import (
     TrendDirection,
     TrendResult,
 )
-from flowsense.infrastructure.airflow import AirflowApiError, AirflowClient
+from flowsense.infrastructure.airflow import (
+    AirflowApiError,
+    AirflowClient,
+    AirflowDataError,
+)
 
 try:
     __version__ = version("flowsense")
@@ -40,10 +45,12 @@ __all__ = [
     "DEFAULT_ANALYSIS_POLICY",
     "AirflowApiError",
     "AirflowClient",
+    "AirflowDataError",
     "AnalysisDiagnostic",
     "AnalysisPolicy",
     "ChangeDirection",
     "ChangePointResult",
+    "ConfigurationError",
     "DAGAnalysis",
     "DAGAnalysisSummary",
     "DAGDataSource",
