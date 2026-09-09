@@ -9,7 +9,12 @@ from rich.console import Console
 
 from flowsense.application import analyze_dag, serialize_analysis
 from flowsense.cli.report import render_analysis
-from flowsense.domain import AnalysisPolicy, MappedTaskAggregation
+from flowsense.domain import (
+    AnalysisPolicy,
+    MappedTaskAggregation,
+    Severity,
+    severity_meets_threshold,
+)
 from flowsense.infrastructure.airflow import AirflowApiError, AirflowClient
 
 app = typer.Typer(
@@ -19,11 +24,18 @@ app = typer.Typer(
 )
 
 console = Console()
+ANALYSIS_THRESHOLD_EXIT_CODE = 2
 
 
 class OutputFormat(StrEnum):
     TABLE = "table"
     JSON = "json"
+
+
+class FailureThreshold(StrEnum):
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
 
 
 @app.callback()
@@ -67,6 +79,13 @@ def analyze(
         OutputFormat,
         typer.Option("--output", "-o"),
     ] = OutputFormat.TABLE,
+    fail_on: Annotated[
+        FailureThreshold | None,
+        typer.Option(
+            "--fail-on",
+            help="Exit with code 2 when severity reaches this threshold.",
+        ),
+    ] = None,
 ) -> None:
     try:
         policy = AnalysisPolicy(
@@ -108,6 +127,11 @@ def analyze(
                 ensure_ascii=False,
             )
         )
-        return
+    else:
+        render_analysis(console, analysis)
 
-    render_analysis(console, analysis)
+    if fail_on is not None and severity_meets_threshold(
+        analysis.overall_severity,
+        Severity(fail_on.value.upper()),
+    ):
+        raise typer.Exit(code=ANALYSIS_THRESHOLD_EXIT_CODE)

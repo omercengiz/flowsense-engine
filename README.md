@@ -163,6 +163,17 @@ For automation and CI/CD integrations, request the versioned JSON document:
 flowsense analyze <dag_id> --output json
 ```
 
+CI jobs can also fail when the analysis reaches a selected severity:
+
+```bash
+flowsense analyze <dag_id> --output json --fail-on high
+```
+
+`--fail-on` accepts `medium`, `high`, or `critical`. The report is always
+written before FlowSense exits: code `0` means the severity is below the
+threshold, code `2` means the threshold was reached, and code `1` remains
+reserved for analysis or Airflow request failures.
+
 The JSON document and MCP tool response share the same serialization contract
 and include a `schema_version` field. The serializer is also available from the
 public library API as `flowsense.serialize_analysis`.
