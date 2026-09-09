@@ -147,6 +147,16 @@ handoff drift, change points, trends, propagation paths, and diagnostics.
 Results are ordered by severity or subject so repeated analyses remain easy to
 compare.
 
+For automation and CI/CD integrations, request the versioned JSON document:
+
+```bash
+flowsense analyze <dag_id> --output json
+```
+
+The JSON document and MCP tool response share the same serialization contract
+and include a `schema_version` field. The serializer is also available from the
+public library API as `flowsense.serialize_analysis`.
+
 ## Library API
 
 FlowSense can also be used as a Python library through its supported top-level

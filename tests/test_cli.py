@@ -1,7 +1,9 @@
+import json
 from unittest.mock import MagicMock, patch
 
 from typer.testing import CliRunner
 
+from flowsense import DAGAnalysis
 from flowsense.cli.main import app
 from flowsense.infrastructure.airflow import AirflowApiError
 
@@ -57,3 +59,31 @@ def test_analyze_builds_structural_analysis_policy_from_options() -> None:
     assert policy.trend_minimum_observations == 8
     assert policy.trend_score_threshold == 4.5
     assert policy.trend_minimum_directional_consistency == 0.75
+
+
+def test_analyze_outputs_versioned_json() -> None:
+    analysis = DAGAnalysis(
+        dag_id="demo",
+        runs_analyzed=0,
+        overall_severity="NORMAL",
+        primary_origin=None,
+        drift_results={},
+        handoff_drift_results={},
+        task_impacts={},
+        propagation_results=[],
+        dependencies={},
+    )
+
+    with (
+        patch("flowsense.cli.main.AirflowClient"),
+        patch("flowsense.cli.main.analyze_dag", return_value=analysis),
+        patch("flowsense.cli.main.render_analysis") as render_analysis,
+    ):
+        result = CliRunner().invoke(app, ["analyze", "demo", "--output", "json"])
+
+    assert result.exit_code == 0
+    document = json.loads(result.output)
+    assert document["schema_version"] == "1.0"
+    assert document["dag_id"] == "demo"
+    assert document["overall_severity"] == "NORMAL"
+    render_analysis.assert_not_called()

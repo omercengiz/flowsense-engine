@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import json
+from enum import StrEnum
 from typing import Annotated
 
 import typer
 from rich.console import Console
 
-from flowsense.application import analyze_dag
+from flowsense.application import analyze_dag, serialize_analysis
 from flowsense.cli.report import render_analysis
 from flowsense.domain import AnalysisPolicy, MappedTaskAggregation
 from flowsense.infrastructure.airflow import AirflowApiError, AirflowClient
@@ -17,6 +19,11 @@ app = typer.Typer(
 )
 
 console = Console()
+
+
+class OutputFormat(StrEnum):
+    TABLE = "table"
+    JSON = "json"
 
 
 @app.callback()
@@ -56,6 +63,10 @@ def analyze(
         MappedTaskAggregation,
         typer.Option(),
     ] = MappedTaskAggregation.MAX,
+    output: Annotated[
+        OutputFormat,
+        typer.Option("--output", "-o"),
+    ] = OutputFormat.TABLE,
 ) -> None:
     try:
         policy = AnalysisPolicy(
@@ -88,5 +99,15 @@ def analyze(
     except AirflowApiError as exc:
         console.print(f"[bold red]Airflow request failed:[/bold red] {exc}")
         raise typer.Exit(code=1) from exc
+
+    if output is OutputFormat.JSON:
+        typer.echo(
+            json.dumps(
+                serialize_analysis(analysis),
+                indent=2,
+                ensure_ascii=False,
+            )
+        )
+        return
 
     render_analysis(console, analysis)

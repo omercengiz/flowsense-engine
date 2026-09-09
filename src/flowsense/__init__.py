@@ -1,6 +1,11 @@
 from importlib.metadata import PackageNotFoundError, version
 
-from flowsense.application import DAGDataSource, analyze_dag
+from flowsense.application import (
+    ANALYSIS_SCHEMA_VERSION,
+    DAGDataSource,
+    analyze_dag,
+    serialize_analysis,
+)
 from flowsense.domain import (
     DEFAULT_ANALYSIS_POLICY,
     AnalysisDiagnostic,
@@ -31,6 +36,7 @@ except PackageNotFoundError:
     __version__ = "0.0.0"
 
 __all__ = [
+    "ANALYSIS_SCHEMA_VERSION",
     "DEFAULT_ANALYSIS_POLICY",
     "AirflowApiError",
     "AirflowClient",
@@ -56,4 +62,5 @@ __all__ = [
     "TrendResult",
     "__version__",
     "analyze_dag",
+    "serialize_analysis",
 ]
