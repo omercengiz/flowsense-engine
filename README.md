@@ -191,6 +191,11 @@ The JSON document and MCP tool response share the same serialization contract
 and include a `schema_version` field. The serializer is also available from the
 public library API as `flowsense.serialize_analysis`.
 
+For typed integrations, `flowsense.build_analysis_document` returns a
+validated Pydantic `AnalysisDocument`. Its versioned JSON Schema is available
+through `flowsense.analysis_json_schema()`, allowing consumers to validate or
+generate models for the CLI and MCP response contract.
+
 ## Library API
 
 FlowSense can also be used as a Python library through its supported top-level
