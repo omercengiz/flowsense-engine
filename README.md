@@ -250,6 +250,9 @@ ruff format .
 ```text
 src/flowsense/
 ├── application/
+│   ├── analyzer.py
+│   ├── pipeline.py
+│   └── ports.py
 ├── domain/
 ├── engine/
 │   ├── change_point.py
@@ -295,6 +298,11 @@ durations and handoff delays with a robust Theil-Sen slope. A trend must contain
 at least five observations, meet a minimum directional-consistency ratio, and
 exceed a MAD-based score threshold. Results include the per-run slope, estimated
 total and percentage change, direction, consistency, and score.
+
+The application layer coordinates analysis through explicit task and handoff
+pipeline stages. Each stage returns typed drift, structural-signal, and
+diagnostic results, while `analyze_dag` remains the composition point for impact,
+propagation, root-cause, and DAG-level output.
 
 ## Project Status
 
