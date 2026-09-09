@@ -11,6 +11,7 @@ from flowsense.application import analyze_dag, serialize_analysis
 from flowsense.cli.report import render_analysis
 from flowsense.domain import (
     AnalysisPolicy,
+    FlowSenseError,
     MappedTaskAggregation,
     Severity,
     severity_meets_threshold,
@@ -122,6 +123,9 @@ def analyze(
             )
     except AirflowApiError as exc:
         console.print(f"[bold red]Airflow request failed:[/bold red] {exc}")
+        raise typer.Exit(code=1) from exc
+    except FlowSenseError as exc:
+        console.print(f"[bold red]Analysis failed:[/bold red] {exc}")
         raise typer.Exit(code=1) from exc
 
     if output is OutputFormat.JSON:

@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 import httpx
 import pytest
 
+from flowsense import ConfigurationError
 from flowsense.config import AirflowConfig, get_airflow_config
 from flowsense.infrastructure.airflow.client import AirflowClient
 from flowsense.infrastructure.airflow.dto import (
@@ -46,6 +47,37 @@ def test_reads_api_compatibility_settings_from_environment(
     assert config.api_version == "v1"
     assert config.auth_mode == "basic"
     assert config.history_run_limit == 250
+
+
+@pytest.mark.parametrize(
+    ("name", "value", "message"),
+    [
+        ("AIRFLOW_CONNECT_TIMEOUT", "soon", "must be a number"),
+        ("AIRFLOW_MAX_RETRIES", "many", "must be an integer"),
+    ],
+)
+def test_rejects_invalid_numeric_environment_settings(
+    monkeypatch: pytest.MonkeyPatch,
+    name: str,
+    value: str,
+    message: str,
+) -> None:
+    monkeypatch.setenv("AIRFLOW_USERNAME", "airflow")
+    monkeypatch.setenv("AIRFLOW_PASSWORD", "airflow")
+    monkeypatch.setenv(name, value)
+
+    with pytest.raises(ConfigurationError, match=message):
+        get_airflow_config()
+
+
+def test_reports_missing_credentials_as_configuration_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("AIRFLOW_USERNAME", raising=False)
+    monkeypatch.setenv("AIRFLOW_PASSWORD", "airflow")
+
+    with pytest.raises(ConfigurationError, match="AIRFLOW_USERNAME"):
+        get_airflow_config()
 
 
 @pytest.mark.parametrize("api_version", ["v1", "v2"])

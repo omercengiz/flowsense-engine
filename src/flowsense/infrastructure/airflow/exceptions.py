@@ -14,3 +14,9 @@ class AirflowApiError(FlowSenseError):
 
         status = f" with status {status_code}" if status_code is not None else ""
         super().__init__(f"Airflow API {method} {endpoint} failed{status}.")
+
+
+class AirflowDataError(FlowSenseError):
+    def __init__(self, resource: str) -> None:
+        self.resource = resource
+        super().__init__(f"Airflow returned invalid {resource} data.")
