@@ -89,6 +89,23 @@ def test_analyze_outputs_versioned_json() -> None:
     render_analysis.assert_not_called()
 
 
+def test_analyze_overrides_airflow_history_run_limit() -> None:
+    analysis = _analysis_with_severity(Severity.NORMAL)
+
+    with (
+        patch("flowsense.cli.main.AirflowClient") as client_class,
+        patch("flowsense.cli.main.analyze_dag", return_value=analysis),
+        patch("flowsense.cli.main.render_analysis"),
+    ):
+        result = CliRunner().invoke(
+            app,
+            ["analyze", "demo", "--history-run-limit", "250"],
+        )
+
+    assert result.exit_code == 0
+    client_class.assert_called_once_with(history_run_limit=250)
+
+
 def test_analyze_exits_with_threshold_code_after_rendering_report() -> None:
     analysis = _analysis_with_severity(Severity.HIGH)
 

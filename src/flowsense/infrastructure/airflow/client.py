@@ -39,6 +39,7 @@ class AirflowClient:
         read_timeout: float | None = None,
         max_retries: int | None = None,
         retry_backoff: float | None = None,
+        history_run_limit: int | None = None,
         http_client: httpx.Client | None = None,
         sleep: Callable[[float], None] | None = None,
     ):
@@ -61,6 +62,11 @@ class AirflowClient:
         self.retry_backoff = (
             retry_backoff if retry_backoff is not None else config.retry_backoff
         )
+        self.history_run_limit = (
+            history_run_limit
+            if history_run_limit is not None
+            else config.history_run_limit
+        )
 
         if self.api_version not in {"v1", "v2"}:
             raise ValueError("api_version must be 'v1' or 'v2'")
@@ -75,6 +81,8 @@ class AirflowClient:
             raise ValueError("max_retries must be non-negative")
         if self.retry_backoff < 0:
             raise ValueError("retry_backoff must be non-negative")
+        if self.history_run_limit < 2:
+            raise ValueError("history_run_limit must be at least 2")
 
         self._owns_http_client = http_client is None
         self._http_client = http_client or httpx.Client(
@@ -270,14 +278,13 @@ class AirflowClient:
             timestamp = run.run_after or run.logical_date or run.queued_at
             return timestamp.timestamp() if timestamp is not None else float("-inf")
 
-        dag_runs.sort(key=run_timestamp)
+        successful_dag_runs = [run for run in dag_runs if run.state == "success"]
+        successful_dag_runs.sort(key=run_timestamp)
+        selected_dag_runs = successful_dag_runs[-self.history_run_limit :]
 
         task_runs: list[TaskRun] = []
 
-        for dag_run in dag_runs:
-            if dag_run.state != "success":
-                continue
-
+        for dag_run in selected_dag_runs:
             response = self.get_task_instances(
                 dag_id=dag_id,
                 dag_run_id=dag_run.dag_run_id,

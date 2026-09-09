@@ -39,11 +39,13 @@ def test_reads_api_compatibility_settings_from_environment(
     monkeypatch.setenv("AIRFLOW_PASSWORD", "airflow")
     monkeypatch.setenv("AIRFLOW_API_VERSION", "v1")
     monkeypatch.setenv("AIRFLOW_AUTH_MODE", "basic")
+    monkeypatch.setenv("AIRFLOW_HISTORY_RUN_LIMIT", "250")
 
     config = get_airflow_config()
 
     assert config.api_version == "v1"
     assert config.auth_mode == "basic"
+    assert config.history_run_limit == 250
 
 
 @pytest.mark.parametrize("api_version", ["v1", "v2"])

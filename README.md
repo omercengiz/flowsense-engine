@@ -127,6 +127,7 @@ AIRFLOW_CONNECT_TIMEOUT=10
 AIRFLOW_READ_TIMEOUT=10
 AIRFLOW_MAX_RETRIES=2
 AIRFLOW_RETRY_BACKOFF=0.5
+AIRFLOW_HISTORY_RUN_LIMIT=100
 ```
 
 Use `AIRFLOW_API_VERSION=v1` with `AIRFLOW_AUTH_MODE=basic` for Airflow 2.x
@@ -173,6 +174,18 @@ flowsense analyze <dag_id> --output json --fail-on high
 written before FlowSense exits: code `0` means the severity is below the
 threshold, code `2` means the threshold was reached, and code `1` remains
 reserved for analysis or Airflow request failures.
+
+By default, FlowSense collects task instances for the most recent 100
+successful DAG runs. This prevents long-lived DAGs from generating an
+unbounded number of task-instance API requests. Change the default with
+`AIRFLOW_HISTORY_RUN_LIMIT`, or override it for one CLI analysis:
+
+```bash
+flowsense analyze <dag_id> --history-run-limit 250
+```
+
+The MCP tool exposes the same override as `history_run_limit`. The limit must
+be at least `2`; increase it when analysis policies require a larger history.
 
 The JSON document and MCP tool response share the same serialization contract
 and include a `schema_version` field. The serializer is also available from the
