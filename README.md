@@ -123,12 +123,22 @@ AIRFLOW_USERNAME=your_username
 AIRFLOW_PASSWORD=your_password
 AIRFLOW_API_VERSION=v2
 AIRFLOW_AUTH_MODE=token
+AIRFLOW_CONNECT_TIMEOUT=10
+AIRFLOW_READ_TIMEOUT=10
+AIRFLOW_MAX_RETRIES=2
+AIRFLOW_RETRY_BACKOFF=0.5
 ```
 
 Use `AIRFLOW_API_VERSION=v1` with `AIRFLOW_AUTH_MODE=basic` for Airflow 2.x
 Stable REST API deployments. Airflow 3.x uses the `v2` API and typically uses
 token authentication. Authentication still depends on the API auth backend
 configured in the Airflow deployment.
+
+Transient transport failures and HTTP `429`, `502`, `503`, and `504` responses
+are retried with exponential backoff. `Retry-After` is honored when Airflow
+provides it. Connect/read timeouts, retry count, and base backoff can be tuned
+with the environment variables above; permanent client errors are returned
+without retrying.
 
 Load the environment variables:
 
