@@ -86,6 +86,20 @@ def test_analyze_tool_translates_expected_errors() -> None:
         analyze_airflow_dag("demo")
 
 
+def test_analyze_tool_rejects_inconsistent_history_settings_before_airflow() -> None:
+    with (
+        patch("flowsense.mcp.server.AirflowClient") as client_class,
+        pytest.raises(RuntimeError, match="history_run_limit"),
+    ):
+        analyze_airflow_dag(
+            "demo",
+            minimum_history=20,
+            history_run_limit=10,
+        )
+
+    client_class.assert_not_called()
+
+
 def test_serialize_analysis() -> None:
     analysis = DAGAnalysis(
         dag_id="demo",

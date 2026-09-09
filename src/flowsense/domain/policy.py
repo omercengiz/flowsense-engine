@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from flowsense.domain.enums import MappedTaskAggregation
+from flowsense.domain.exceptions import ConfigurationError
 
 
 @dataclass(frozen=True)
@@ -21,28 +22,34 @@ class AnalysisPolicy:
 
     def __post_init__(self) -> None:
         if self.minimum_history < 2:
-            raise ValueError("minimum_history must be at least 2.")
+            raise ConfigurationError("minimum_history must be at least 2.")
         if self.baseline_window is not None:
             if self.baseline_window < 1:
-                raise ValueError("baseline_window must be at least 1.")
+                raise ConfigurationError("baseline_window must be at least 1.")
             if self.baseline_window < self.minimum_history - 1:
-                raise ValueError(
+                raise ConfigurationError(
                     "baseline_window must contain enough values for minimum_history."
                 )
         if not (
             0 < self.medium_threshold < self.high_threshold < self.critical_threshold
         ):
-            raise ValueError("Severity thresholds must be positive and increasing.")
+            raise ConfigurationError(
+                "Severity thresholds must be positive and increasing."
+            )
         if self.change_point_minimum_segment_size < 2:
-            raise ValueError("change_point_minimum_segment_size must be at least 2.")
+            raise ConfigurationError(
+                "change_point_minimum_segment_size must be at least 2."
+            )
         if self.change_point_score_threshold <= 0:
-            raise ValueError("change_point_score_threshold must be positive.")
+            raise ConfigurationError("change_point_score_threshold must be positive.")
         if self.trend_minimum_observations < 3:
-            raise ValueError("trend_minimum_observations must be at least 3.")
+            raise ConfigurationError("trend_minimum_observations must be at least 3.")
         if self.trend_score_threshold <= 0:
-            raise ValueError("trend_score_threshold must be positive.")
+            raise ConfigurationError("trend_score_threshold must be positive.")
         if not 0 < self.trend_minimum_directional_consistency <= 1:
-            raise ValueError("trend_minimum_directional_consistency must be in (0, 1].")
+            raise ConfigurationError(
+                "trend_minimum_directional_consistency must be in (0, 1]."
+            )
 
 
 DEFAULT_ANALYSIS_POLICY = AnalysisPolicy()

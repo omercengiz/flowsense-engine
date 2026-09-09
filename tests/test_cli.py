@@ -141,6 +141,25 @@ def test_analyze_overrides_airflow_history_run_limit() -> None:
     client_class.assert_called_once_with(history_run_limit=250)
 
 
+def test_analyze_rejects_inconsistent_history_settings_before_airflow() -> None:
+    with patch("flowsense.cli.main.AirflowClient") as client_class:
+        result = CliRunner().invoke(
+            app,
+            [
+                "analyze",
+                "demo",
+                "--minimum-history",
+                "20",
+                "--history-run-limit",
+                "10",
+            ],
+        )
+
+    assert result.exit_code == 1
+    assert "history_run_limit must be at least minimum_history" in result.output
+    client_class.assert_not_called()
+
+
 def test_analyze_exits_with_threshold_code_after_rendering_report() -> None:
     analysis = _analysis_with_severity(Severity.HIGH)
 
