@@ -26,6 +26,7 @@ def test_top_level_api_declares_supported_exports() -> None:
         "AirflowDataError",
         "ANALYSIS_SCHEMA_VERSION",
         "AnalysisPolicy",
+        "AnalysisDocument",
         "ChangeDirection",
         "ChangePointResult",
         "ConfigurationError",
@@ -38,7 +39,9 @@ def test_top_level_api_declares_supported_exports() -> None:
         "TrendDirection",
         "TrendResult",
         "__version__",
+        "analysis_json_schema",
         "analyze_dag",
+        "build_analysis_document",
         "serialize_analysis",
     }
 
