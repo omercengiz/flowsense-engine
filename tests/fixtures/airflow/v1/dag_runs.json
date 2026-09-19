@@ -1,0 +1,10 @@
+{
+  "dag_runs": [
+    {"dag_run_id": "run_1", "state": "success", "execution_date": "2026-01-01T00:00:00Z"},
+    {"dag_run_id": "run_2", "state": "success", "execution_date": "2026-01-02T00:00:00Z"},
+    {"dag_run_id": "run_3", "state": "success", "execution_date": "2026-01-03T00:00:00Z"},
+    {"dag_run_id": "run_4", "state": "success", "execution_date": "2026-01-04T00:00:00Z"},
+    {"dag_run_id": "run_5", "state": "success", "execution_date": "2026-01-05T00:00:00Z"}
+  ],
+  "total_entries": 5
+}
