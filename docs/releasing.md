@@ -33,11 +33,15 @@ After the release pull request is merged into `master` and CI passes:
 ```bash
 git switch master
 git pull --ff-only origin master
-git tag -a v0.2.1 -m "FlowSense 0.2.1"
-git push origin v0.2.1
+git tag -a v0.3.0 -m "FlowSense 0.3.0"
+git push origin v0.3.0
 ```
 
 Create and publish the corresponding GitHub Release after pushing the tag. The
 release workflow builds that exact tag and publishes it through the protected
 `pypi` environment. Package publication should run only after the built artifacts
 have been verified.
+
+Use `FlowSense 0.3.0` as the release title, select `Latest`, and do not mark a
+stable release as a pre-release. Copy the `0.3.0` section from `CHANGELOG.md` into
+the release notes.
