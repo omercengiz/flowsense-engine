@@ -54,6 +54,18 @@ def test_task_run_rejects_invalid_duration(duration: float) -> None:
         )
 
 
+def test_task_run_is_an_immutable_domain_value() -> None:
+    task_run = TaskRun(
+        dag_id="demo",
+        dag_run_id="run_1",
+        task_id="extract",
+        duration=1.0,
+    )
+
+    with pytest.raises(AttributeError):
+        task_run.duration = 2.0
+
+
 def test_legacy_model_imports_reexport_domain_types() -> None:
     assert LegacyAnalysisDiagnostic is AnalysisDiagnostic
     assert LegacyDAGAnalysis is DAGAnalysis
