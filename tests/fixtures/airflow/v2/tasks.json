@@ -1,0 +1,8 @@
+{
+  "tasks": [
+    {"task_id": "extract", "downstream_task_ids": ["transform"], "operator_name": "PythonOperator", "is_mapped": false},
+    {"task_id": "transform", "downstream_task_ids": ["load"], "operator_name": "PythonOperator", "is_mapped": false},
+    {"task_id": "load", "downstream_task_ids": [], "operator_name": "PythonOperator", "is_mapped": false}
+  ],
+  "total_entries": 3
+}

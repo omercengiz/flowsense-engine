@@ -1,0 +1,8 @@
+{
+  "task_instances": [
+    {"id": "ti-extract", "task_id": "extract", "task_display_name": "Extract", "state": "success", "start_date": "2026-01-01T00:00:00Z", "end_date": "2026-01-01T00:00:01Z", "duration": 1.0, "try_number": 1, "map_index": -1, "dag_version": {"version_number": 1}},
+    {"id": "ti-transform", "task_id": "transform", "task_display_name": "Transform", "state": "success", "start_date": "2026-01-01T00:00:01Z", "end_date": "2026-01-01T00:00:03Z", "duration": 2.0, "try_number": 1, "map_index": -1, "dag_version": {"version_number": 1}},
+    {"id": "ti-load", "task_id": "load", "task_display_name": "Load", "state": "success", "start_date": "2026-01-01T00:00:03Z", "end_date": "2026-01-01T00:00:04Z", "duration": 1.0, "try_number": 1, "map_index": -1, "dag_version": {"version_number": 1}}
+  ],
+  "total_entries": 3
+}

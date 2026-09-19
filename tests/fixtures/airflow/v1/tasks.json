@@ -1,0 +1,8 @@
+{
+  "tasks": [
+    {"task_id": "extract", "downstream_task_ids": ["transform"]},
+    {"task_id": "transform", "downstream_task_ids": ["load"]},
+    {"task_id": "load", "downstream_task_ids": []}
+  ],
+  "total_entries": 3
+}

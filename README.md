@@ -156,6 +156,10 @@ Stable REST API deployments. Airflow 3.x uses the `v2` API and typically uses
 token authentication. Authentication still depends on the API auth backend
 configured in the Airflow deployment.
 
+CI verifies both integrations through versioned Airflow 2 and Airflow 3 REST
+contract fixtures. These boundary tests cover authentication, endpoint routing,
+response validation, domain mapping, and the complete analysis use case.
+
 Transient transport failures and HTTP `429`, `502`, `503`, and `504` responses
 are retried with exponential backoff. `Retry-After` is honored when Airflow
 provides it. Connect/read timeouts, retry count, and base backoff can be tuned

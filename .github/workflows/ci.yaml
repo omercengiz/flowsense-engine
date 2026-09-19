@@ -52,3 +52,33 @@ jobs:
           uv pip install --python /tmp/flowsense-wheel-test/bin/python dist/*.whl
           /tmp/flowsense-wheel-test/bin/flowsense --version
           /tmp/flowsense-wheel-test/bin/flowsense --help
+
+  airflow-contract:
+    name: Airflow ${{ matrix.airflow-major }} contract
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        airflow-major:
+          - "2"
+          - "3"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies
+        run: uv sync --locked --all-extras
+
+      - name: Verify Airflow REST contract
+        env:
+          FLOWSENSE_AIRFLOW_CONTRACT_VERSION: ${{ matrix.airflow-major }}
+        run: uv run python -m pytest -m airflow_contract -v
