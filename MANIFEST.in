@@ -1,2 +1,2 @@
 include CHANGELOG.md
-include docs/releasing.md
+recursive-include docs *.md
