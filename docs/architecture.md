@@ -48,6 +48,12 @@ implemented by infrastructure adapters. The existing functional
 `analyze_dag(dag_id, source, policy)` API remains available for callers that
 already own a data source.
 
+`DAGAnalysisEngine` is the coarse-grained algorithm extension port. The default
+implementation owns the complete statistical workflow after data collection.
+Alternative engines can be injected into `AnalyzeDAG` without changing CLI,
+MCP, data-source, or output-contract code. Individual detector interfaces are
+intentionally avoided until independent detector replacement is required.
+
 ### Infrastructure
 
 `flowsense.infrastructure.airflow` implements Airflow HTTP access. Pydantic DTOs
@@ -87,6 +93,8 @@ Input options
 
 - Add another data source by implementing `DAGDataSource` and providing a
   `DAGDataSourceFactory`.
+- Replace the complete analysis workflow by implementing `DAGAnalysisEngine`
+  and injecting it into `AnalyzeDAG`.
 - Add a delivery mechanism by creating an adapter that builds an
   `AnalysisRequest` and invokes `AnalyzeDAG`.
 - Extend output consumers through `AnalysisDocument`; incompatible contract
