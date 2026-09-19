@@ -1,0 +1,202 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "description": "Latest FlowSense DAG analysis health, severity, coverage, and task anomalies.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "flowsense-prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "options": {
+                "0": {"color": "green", "index": 0, "text": "NORMAL"},
+                "1": {"color": "yellow", "index": 1, "text": "MEDIUM"},
+                "2": {"color": "orange", "index": 2, "text": "HIGH"},
+                "3": {"color": "red", "index": 3, "text": "CRITICAL"}
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 1},
+              {"color": "orange", "value": 2},
+              {"color": "red", "value": 3}
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 5, "w": 4, "x": 0, "y": 0},
+      "id": 1,
+      "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true},
+      "targets": [{"editorMode": "code", "expr": "flowsense_dag_overall_severity{dag_id=~\"$dag_id\"}", "instant": true, "legendFormat": "{{dag_id}}", "range": false, "refId": "A"}],
+      "title": "Overall severity",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "flowsense-prometheus"},
+      "fieldConfig": {"defaults": {"mappings": [{"options": {"0": {"color": "red", "index": 0, "text": "FAILED"}, "1": {"color": "green", "index": 1, "text": "HEALTHY"}}, "type": "value"}], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}, "overrides": []},
+      "gridPos": {"h": 5, "w": 4, "x": 4, "y": 0},
+      "id": 2,
+      "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true},
+      "targets": [{"editorMode": "code", "expr": "flowsense_analysis_success{dag_id=~\"$dag_id\"}", "instant": true, "legendFormat": "{{dag_id}}", "range": false, "refId": "A"}],
+      "title": "Analysis health",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "flowsense-prometheus"},
+      "fieldConfig": {"defaults": {"max": 1, "min": 0, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.5}, {"color": "green", "value": 0.9}]}, "unit": "percentunit"}, "overrides": []},
+      "gridPos": {"h": 5, "w": 4, "x": 8, "y": 0},
+      "id": 3,
+      "options": {"minVizHeight": 75, "minVizWidth": 75, "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "showThresholdLabels": false, "showThresholdMarkers": true, "sizing": "auto"},
+      "targets": [{"editorMode": "code", "expr": "flowsense_dag_analysis_coverage_ratio{dag_id=~\"$dag_id\"}", "instant": true, "legendFormat": "{{dag_id}}", "range": false, "refId": "A"}],
+      "title": "Analysis coverage",
+      "type": "gauge"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "flowsense-prometheus"},
+      "fieldConfig": {"defaults": {"decimals": 3, "unit": "s"}, "overrides": []},
+      "gridPos": {"h": 5, "w": 4, "x": 12, "y": 0},
+      "id": 4,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true},
+      "targets": [{"editorMode": "code", "expr": "flowsense_analysis_duration_seconds{dag_id=~\"$dag_id\"}", "legendFormat": "{{dag_id}}", "range": true, "refId": "A"}],
+      "title": "Analysis duration",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "flowsense-prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}, {"color": "red", "value": 5}]}}, "overrides": []},
+      "gridPos": {"h": 5, "w": 4, "x": 16, "y": 0},
+      "id": 5,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true},
+      "targets": [{"editorMode": "code", "expr": "flowsense_dag_anomalous_tasks{dag_id=~\"$dag_id\"}", "legendFormat": "{{dag_id}}", "range": true, "refId": "A"}],
+      "title": "Anomalous tasks",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "flowsense-prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}, {"color": "red", "value": 5}]}}, "overrides": []},
+      "gridPos": {"h": 5, "w": 4, "x": 20, "y": 0},
+      "id": 6,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true},
+      "targets": [{"editorMode": "code", "expr": "flowsense_dag_anomalous_handoffs{dag_id=~\"$dag_id\"}", "legendFormat": "{{dag_id}}", "range": true, "refId": "A"}],
+      "title": "Anomalous handoffs",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "flowsense-prometheus"},
+      "fieldConfig": {"defaults": {"custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 15, "gradientMode": "none", "hideFrom": {"legend": false, "tooltip": false, "viz": false}, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "min": 0, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}, {"color": "orange", "value": 2}, {"color": "red", "value": 3}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 5},
+      "id": 7,
+      "options": {"legend": {"calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true}, "tooltip": {"hideZeros": false, "mode": "multi", "sort": "desc"}},
+      "targets": [{"editorMode": "code", "expr": "flowsense_dag_overall_severity{dag_id=~\"$dag_id\"}", "legendFormat": "{{dag_id}}", "range": true, "refId": "A"}],
+      "title": "DAG severity history",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "flowsense-prometheus"},
+      "fieldConfig": {"defaults": {"custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "%", "axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": {"legend": false, "tooltip": false, "viz": false}, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "unit": "percent"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 5},
+      "id": 8,
+      "options": {"legend": {"calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "right", "showLegend": true}, "tooltip": {"hideZeros": false, "mode": "multi", "sort": "desc"}},
+      "targets": [{"editorMode": "code", "expr": "flowsense_task_deviation_percent{dag_id=~\"$dag_id\",task_id=~\"$task_id\"}", "legendFormat": "{{task_id}}", "range": true, "refId": "A"}],
+      "title": "Task duration deviation",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "flowsense-prometheus"},
+      "fieldConfig": {"defaults": {"mappings": [{"options": {"0": {"color": "green", "index": 0, "text": "NORMAL"}, "1": {"color": "yellow", "index": 1, "text": "MEDIUM"}, "2": {"color": "orange", "index": 2, "text": "HIGH"}, "3": {"color": "red", "index": 3, "text": "CRITICAL"}}, "type": "value"}], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}, {"color": "orange", "value": 2}, {"color": "red", "value": 3}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 13},
+      "id": 9,
+      "options": {"displayMode": "gradient", "maxVizHeight": 300, "minVizHeight": 16, "minVizWidth": 8, "namePlacement": "auto", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "showUnfilled": true, "sizing": "auto", "valueMode": "color"},
+      "targets": [{"editorMode": "code", "expr": "flowsense_task_severity{dag_id=~\"$dag_id\",task_id=~\"$task_id\"}", "instant": true, "legendFormat": "{{task_id}}", "range": false, "refId": "A"}],
+      "title": "Task severity",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "flowsense-prometheus"},
+      "fieldConfig": {"defaults": {"custom": {"axisCenteredZero": true, "axisColorMode": "text", "axisLabel": "z-score", "axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": {"legend": false, "tooltip": false, "viz": false}, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "area"}}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 3.5}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 13},
+      "id": 10,
+      "options": {"legend": {"calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true}, "tooltip": {"hideZeros": false, "mode": "multi", "sort": "desc"}},
+      "targets": [{"editorMode": "code", "expr": "flowsense_task_robust_z_score{dag_id=~\"$dag_id\",task_id=~\"$task_id\"}", "legendFormat": "{{task_id}}", "range": true, "refId": "A"}],
+      "title": "Task robust z-score",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "flowsense-prometheus"},
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 4, "x": 16, "y": 13},
+      "id": 11,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true},
+      "targets": [{"editorMode": "code", "expr": "flowsense_dag_dropped_tasks{dag_id=~\"$dag_id\"}", "instant": true, "legendFormat": "{{dag_id}}", "range": false, "refId": "A"}],
+      "title": "Tasks omitted by limit",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "flowsense-prometheus"},
+      "fieldConfig": {"defaults": {"unit": "dateTimeFromNow"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 4, "x": 20, "y": 13},
+      "id": 12,
+      "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true},
+      "targets": [{"editorMode": "code", "expr": "flowsense_analysis_last_success_timestamp_seconds{dag_id=~\"$dag_id\"} * 1000", "instant": true, "legendFormat": "{{dag_id}}", "range": false, "refId": "A"}],
+      "title": "Last successful analysis",
+      "type": "stat"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 42,
+  "tags": ["flowsense", "airflow", "observability"],
+  "templating": {
+    "list": [
+      {
+        "allValue": ".*",
+        "current": {"text": "All", "value": "$__all"},
+        "datasource": {"type": "prometheus", "uid": "flowsense-prometheus"},
+        "definition": "label_values(flowsense_analysis_success, dag_id)",
+        "includeAll": true,
+        "label": "DAG",
+        "multi": true,
+        "name": "dag_id",
+        "options": [],
+        "query": {"query": "label_values(flowsense_analysis_success, dag_id)", "refId": "PrometheusVariableQueryEditor-VariableQuery"},
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {"text": "All", "value": "$__all"},
+        "datasource": {"type": "prometheus", "uid": "flowsense-prometheus"},
+        "definition": "label_values(flowsense_task_severity{dag_id=~\"$dag_id\"}, task_id)",
+        "includeAll": true,
+        "label": "Task",
+        "multi": true,
+        "name": "task_id",
+        "options": [],
+        "query": {"query": "label_values(flowsense_task_severity{dag_id=~\"$dag_id\"}, task_id)", "refId": "PrometheusVariableQueryEditor-VariableQuery"},
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "FlowSense Overview",
+  "uid": "flowsense-overview",
+  "version": 1
+}

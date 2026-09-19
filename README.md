@@ -327,6 +327,10 @@ flowsense serve-metrics example_dag --host 0.0.0.0 --port 9108
 See [docs/prometheus.md](docs/prometheus.md) for the metric contract,
 cardinality policy, and Prometheus scrape configuration.
 
+A provisioned Prometheus and Grafana development stack, including the
+`FlowSense Overview` dashboard, is documented in
+[docs/grafana.md](docs/grafana.md).
+
 ## Development
 
 Run unit tests:
