@@ -241,13 +241,12 @@ FlowSense can also be used as a Python library through its supported top-level
 API:
 
 ```python
-from flowsense import AirflowClient, analyze_dag
+from flowsense import AnalysisRequest, AnalyzeDAG
+from flowsense.infrastructure.airflow import create_airflow_data_source
 
-with AirflowClient() as source:
-    analysis = analyze_dag(
-        dag_id="flowsense_demo",
-        source=source,
-    )
+analysis = AnalyzeDAG(create_airflow_data_source).execute(
+    AnalysisRequest(dag_id="flowsense_demo")
+)
 
 print(analysis.overall_severity)
 print(analysis.primary_origin)

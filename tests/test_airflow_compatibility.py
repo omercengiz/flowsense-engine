@@ -1,11 +1,14 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import httpx
 import pytest
 
 from flowsense import ConfigurationError
-from flowsense.config import AirflowConfig, get_airflow_config
-from flowsense.infrastructure.airflow.client import AirflowClient
+from flowsense.infrastructure.airflow import (
+    AirflowClient,
+    AirflowConfig,
+    load_airflow_config,
+)
 from flowsense.infrastructure.airflow.dto import (
     AirflowDagRunDTO,
     AirflowTaskDTO,
@@ -19,17 +22,16 @@ def _client(
     api_version: str,
     auth_mode: str,
 ) -> AirflowClient:
-    with patch(
-        "flowsense.infrastructure.airflow.client.get_airflow_config",
-        return_value=AirflowConfig(
+    return AirflowClient(
+        config=AirflowConfig(
             base_url="http://airflow.test",
             username="airflow",
             password="airflow",
             api_version=api_version,
             auth_mode=auth_mode,
         ),
-    ):
-        return AirflowClient(http_client=http_client)
+        http_client=http_client,
+    )
 
 
 def test_reads_api_compatibility_settings_from_environment(
@@ -42,7 +44,7 @@ def test_reads_api_compatibility_settings_from_environment(
     monkeypatch.setenv("AIRFLOW_AUTH_MODE", "basic")
     monkeypatch.setenv("AIRFLOW_HISTORY_RUN_LIMIT", "250")
 
-    config = get_airflow_config()
+    config = load_airflow_config()
 
     assert config.api_version == "v1"
     assert config.auth_mode == "basic"
@@ -67,7 +69,7 @@ def test_rejects_invalid_numeric_environment_settings(
     monkeypatch.setenv(name, value)
 
     with pytest.raises(ConfigurationError, match=message):
-        get_airflow_config()
+        load_airflow_config()
 
 
 def test_reports_missing_credentials_as_configuration_error(
@@ -77,7 +79,7 @@ def test_reports_missing_credentials_as_configuration_error(
     monkeypatch.setenv("AIRFLOW_PASSWORD", "airflow")
 
     with pytest.raises(ConfigurationError, match="AIRFLOW_USERNAME"):
-        get_airflow_config()
+        load_airflow_config()
 
 
 @pytest.mark.parametrize("api_version", ["v1", "v2"])
