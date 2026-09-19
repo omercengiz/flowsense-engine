@@ -3,6 +3,15 @@
 All notable changes to FlowSense are documented in this file. The project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Made the `TaskRun` domain entity immutable and framework-independent while
+  keeping Pydantic at external DTO and output-contract boundaries.
+- Added automated enforcement preventing the domain layer from importing
+  Pydantic.
+
 ## [0.2.1] - 2026-09-10
 
 ### Changed
