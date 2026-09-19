@@ -21,3 +21,23 @@ class DAGAnalysisEngine(Protocol):
         dependencies: dict[str, list[str]],
         policy: AnalysisPolicy,
     ) -> DAGAnalysis: ...
+
+
+class AnalysisMetricsSink(Protocol):
+    """Receive analysis lifecycle events without coupling use cases to a backend."""
+
+    def record_success(
+        self,
+        analysis: DAGAnalysis,
+        *,
+        duration_seconds: float,
+        observed_at: float | None = None,
+    ) -> None: ...
+
+    def record_failure(
+        self,
+        dag_id: str,
+        *,
+        duration_seconds: float,
+        observed_at: float | None = None,
+    ) -> None: ...
