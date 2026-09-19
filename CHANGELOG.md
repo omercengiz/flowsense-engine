@@ -5,14 +5,35 @@ All notable changes to FlowSense are documented in this file. The project uses
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-20
+
+### Added
+
+- Added `AnalyzeDAG` as the shared application use-case boundary for CLI, MCP,
+  and library integrations.
+- Added the `DAGAnalysisEngine` extension port and injectable default analysis
+  engine.
+- Added versioned golden regression coverage for the complete analysis output.
+- Added deterministic performance benchmarks with machine-readable results and
+  a manually triggered GitHub Actions workflow.
+- Added an Airflow 2 and Airflow 3 REST contract test matrix covering
+  authentication, routing, validation, mapping, and end-to-end analysis.
+
 ### Changed
 
+- Separated environment loading and Airflow client construction through explicit
+  `AirflowConfig` and infrastructure factories.
 - Made the `TaskRun` domain entity immutable and framework-independent while
   keeping Pydantic at external DTO and output-contract boundaries.
 - Added automated enforcement preventing the domain layer from importing
   Pydantic.
-- Added a coarse-grained `DAGAnalysisEngine` port so alternative analysis
-  workflows can be injected without coupling delivery adapters to algorithms.
+- Added architecture dependency guardrails and documented supported extension
+  points and compatibility boundaries.
+
+### Fixed
+
+- Rejected non-finite and negative analysis inputs at the domain boundary.
+- Made root-cause selection deterministic when candidates have equal scores.
 
 ## [0.2.1] - 2026-09-10
 
