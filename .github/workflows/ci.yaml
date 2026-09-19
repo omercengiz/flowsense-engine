@@ -82,3 +82,34 @@ jobs:
         env:
           FLOWSENSE_AIRFLOW_CONTRACT_VERSION: ${{ matrix.airflow-major }}
         run: uv run python -m pytest -m airflow_contract -v
+
+  observability:
+    name: Observability assets
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Compose configuration
+        run: docker compose -f deploy/observability/docker-compose.yml config --quiet
+
+      - name: Validate Prometheus alert rules
+        run: |
+          docker run --rm \
+            --entrypoint promtool \
+            --volume "$PWD/deploy/observability:/workspace:ro" \
+            --workdir /workspace \
+            prom/prometheus:v3.14.0 \
+            check rules alerts.yml
+
+      - name: Test Prometheus alert rules
+        run: |
+          docker run --rm \
+            --entrypoint promtool \
+            --volume "$PWD/deploy/observability:/workspace:ro" \
+            --workdir /workspace \
+            prom/prometheus:v3.14.0 \
+            test rules alerts.test.yml

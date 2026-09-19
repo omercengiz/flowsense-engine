@@ -42,10 +42,17 @@ def test_observability_provisioning_is_wired_consistently() -> None:
     provider = (
         OBSERVABILITY / "grafana" / "provisioning" / "dashboards" / "flowsense.yml"
     ).read_text(encoding="utf-8")
+    alerts = (OBSERVABILITY / "alerts.yml").read_text(encoding="utf-8")
+    alertmanager = (OBSERVABILITY / "alertmanager.yml").read_text(encoding="utf-8")
 
     assert "prom/prometheus:v3.14.0" in compose
     assert "grafana/grafana:13.2.2" in compose
+    assert "prom/alertmanager:v0.34.1" in compose
     assert "host.docker.internal:9108" in prometheus
     assert "uid: flowsense-prometheus" in datasource
     assert "url: http://prometheus:9090" in datasource
     assert "path: /var/lib/grafana/dashboards" in provider
+    assert "alertmanager:9093" in prometheus
+    assert "FlowSenseCriticalDAG" in alerts
+    assert "FlowSenseAnalysisStale" in alerts
+    assert "receiver: default" in alertmanager

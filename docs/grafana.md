@@ -31,6 +31,7 @@ Open:
 
 - Grafana: `http://localhost:3000` (`admin` / `admin` by default)
 - Prometheus: `http://localhost:9090`
+- Alertmanager: `http://localhost:9093`
 
 Set `GRAFANA_ADMIN_USER` and `GRAFANA_ADMIN_PASSWORD` before starting Compose
 to override the local defaults. The Prometheus data source and `FlowSense
@@ -48,9 +49,12 @@ The dashboard provides:
 - current task severity;
 - task cardinality omissions;
 - last successful analysis time.
+- currently firing FlowSense alerts.
 
 Use the DAG and task variables at the top of the dashboard to narrow the view.
 The default time range is six hours and the dashboard refreshes every 30 seconds.
+See [alerting.md](alerting.md) for rule behavior, validation, and production
+notification configuration.
 
 ## Stop the stack
 
