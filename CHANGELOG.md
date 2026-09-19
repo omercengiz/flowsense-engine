@@ -11,6 +11,8 @@ All notable changes to FlowSense are documented in this file. The project uses
   keeping Pydantic at external DTO and output-contract boundaries.
 - Added automated enforcement preventing the domain layer from importing
   Pydantic.
+- Added a coarse-grained `DAGAnalysisEngine` port so alternative analysis
+  workflows can be injected without coupling delivery adapters to algorithms.
 
 ## [0.2.1] - 2026-09-10
 
