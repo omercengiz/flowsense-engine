@@ -3,9 +3,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from flowsense import AnalysisPolicy
+from flowsense import AnalysisPolicy, TaskRun
 from flowsense.application import DAGDataSource, analyze_dag
-from flowsense.models import TaskRun
 
 
 def test_analyze_dag_identifies_primary_origin() -> None:

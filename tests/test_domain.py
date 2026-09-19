@@ -1,3 +1,5 @@
+import warnings
+
 from flowsense.domain import (
     AnalysisDiagnostic,
     DAGAnalysis,
@@ -14,15 +16,18 @@ from flowsense.engine.drift import DriftResult as LegacyDriftResult
 from flowsense.engine.impact import TaskImpact as LegacyTaskImpact
 from flowsense.engine.propagation import PropagationResult as LegacyPropagationResult
 from flowsense.engine.root_cause import RootCauseResult as LegacyRootCauseResult
-from flowsense.models import (
-    AnalysisDiagnostic as LegacyAnalysisDiagnostic,
-)
-from flowsense.models import (
-    DAGAnalysis as LegacyDAGAnalysis,
-)
-from flowsense.models import (
-    TaskRun as LegacyTaskRun,
-)
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", DeprecationWarning)
+    from flowsense.models import (
+        AnalysisDiagnostic as LegacyAnalysisDiagnostic,
+    )
+    from flowsense.models import (
+        DAGAnalysis as LegacyDAGAnalysis,
+    )
+    from flowsense.models import (
+        TaskRun as LegacyTaskRun,
+    )
 
 
 def test_domain_enums_are_string_compatible() -> None:

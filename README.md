@@ -3,7 +3,8 @@
 Temporal drift, anomaly detection, and dependency-aware propagation analysis for Apache Airflow.
 
 Current package release: `0.2.1`. See [CHANGELOG.md](CHANGELOG.md) for release
-notes and [docs/releasing.md](docs/releasing.md) for the release checklist.
+notes, [docs/architecture.md](docs/architecture.md) for the system architecture,
+and [docs/releasing.md](docs/releasing.md) for the release checklist.
 
 FlowSense analyzes historical DAG executions to identify abnormal task behavior and trace how anomalies propagate through downstream dependencies.
 

@@ -2,14 +2,13 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from flowsense.domain import InvalidTaskTimingError
+from flowsense.domain import InvalidTaskTimingError, TaskRun
 from flowsense.engine.timing import (
     build_handoff_history,
     build_handoff_history_with_diagnostics,
     calculate_handoff_delay,
     calculate_handoff_drift,
 )
-from flowsense.models import TaskRun
 
 
 def test_calculate_handoff_delay() -> None:
