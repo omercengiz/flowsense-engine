@@ -10,6 +10,7 @@ from flowsense.domain.exceptions import (
     ConfigurationError,
     FlowSenseError,
     InsufficientHistoryError,
+    InvalidObservationError,
     InvalidTaskTimingError,
 )
 from flowsense.domain.models import TaskRun
@@ -39,6 +40,7 @@ __all__ = [
     "FlowSenseError",
     "ImpactClassification",
     "InsufficientHistoryError",
+    "InvalidObservationError",
     "InvalidTaskTimingError",
     "MappedTaskAggregation",
     "PropagationResult",

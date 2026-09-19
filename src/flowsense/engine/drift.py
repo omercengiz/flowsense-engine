@@ -11,6 +11,7 @@ from flowsense.domain import (
     InsufficientHistoryError,
     Severity,
 )
+from flowsense.engine.validation import validate_finite_observations
 
 
 def calculate_drift(
@@ -18,6 +19,8 @@ def calculate_drift(
     durations: list[float],
     policy: AnalysisPolicy = DEFAULT_ANALYSIS_POLICY,
 ) -> DriftResult:
+    validate_finite_observations(task_id, durations)
+
     if len(durations) < policy.minimum_history:
         raise InsufficientHistoryError(
             subject_id=task_id,

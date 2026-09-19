@@ -1,5 +1,7 @@
 import warnings
 
+import pytest
+
 from flowsense.domain import (
     AnalysisDiagnostic,
     DAGAnalysis,
@@ -39,6 +41,17 @@ def test_severity_threshold_comparison_uses_domain_ordering() -> None:
     assert severity_meets_threshold(Severity.HIGH, Severity.HIGH)
     assert severity_meets_threshold(Severity.CRITICAL, Severity.MEDIUM)
     assert not severity_meets_threshold(Severity.MEDIUM, Severity.HIGH)
+
+
+@pytest.mark.parametrize("duration", [-1.0, float("nan"), float("inf"), -float("inf")])
+def test_task_run_rejects_invalid_duration(duration: float) -> None:
+    with pytest.raises(ValueError):
+        TaskRun(
+            dag_id="demo",
+            dag_run_id="run_1",
+            task_id="extract",
+            duration=duration,
+        )
 
 
 def test_legacy_model_imports_reexport_domain_types() -> None:

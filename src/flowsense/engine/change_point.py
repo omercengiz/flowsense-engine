@@ -5,6 +5,7 @@ import math
 import numpy as np
 
 from flowsense.domain import ChangeDirection, ChangePointResult
+from flowsense.engine.validation import validate_finite_observations
 
 
 def _candidate_score(
@@ -38,6 +39,8 @@ def detect_change_point(
     score_threshold: float = 3.5,
 ) -> ChangePointResult | None:
     """Detect the strongest persistent level shift in an ordered time series."""
+    validate_finite_observations(subject_id, values)
+
     if minimum_segment_size < 2:
         raise ValueError("minimum_segment_size must be at least 2")
 

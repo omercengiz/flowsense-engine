@@ -129,8 +129,10 @@ def select_primary_origin(
             severity_score,
         )
 
+    # Sorting makes an exact ranking tie deterministic across hash seeds.
+    # The alphabetically first task wins when propagation and severity match.
     primary_task = max(
-        root_candidates,
+        sorted(root_candidates),
         key=ranking,
     )
 
