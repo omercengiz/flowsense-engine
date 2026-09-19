@@ -330,6 +330,8 @@ cardinality policy, and Prometheus scrape configuration.
 A provisioned Prometheus and Grafana development stack, including the
 `FlowSense Overview` dashboard, is documented in
 [docs/grafana.md](docs/grafana.md).
+Default operational alerts and Alertmanager routing are documented in
+[docs/alerting.md](docs/alerting.md).
 
 ## Development
 

@@ -1,0 +1,32 @@
+rule_files:
+  - alerts.yml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    input_series:
+      - series: up{job="flowsense",instance="flowsense:9108"}
+        values: 1 0 0 0
+      - series: flowsense_dag_overall_severity{dag_id="critical_dag"}
+        values: 0 3 3 3
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: FlowSenseExporterDown
+        exp_alerts:
+          - exp_labels:
+              instance: flowsense:9108
+              job: flowsense
+              severity: critical
+            exp_annotations:
+              summary: FlowSense metrics endpoint is unavailable
+              description: Prometheus has been unable to scrape flowsense:9108 for two minutes.
+      - eval_time: 3m
+        alertname: FlowSenseCriticalDAG
+        exp_alerts:
+          - exp_labels:
+              dag_id: critical_dag
+              severity: critical
+            exp_annotations:
+              summary: Critical anomaly detected in critical_dag
+              description: The latest DAG analysis has critical severity.

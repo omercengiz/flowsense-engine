@@ -1,0 +1,65 @@
+groups:
+  - name: flowsense
+    rules:
+      - alert: FlowSenseExporterDown
+        expr: up{job="flowsense"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: FlowSense metrics endpoint is unavailable
+          description: Prometheus has been unable to scrape {{ $labels.instance }} for two minutes.
+
+      - alert: FlowSenseAnalysisFailed
+        expr: flowsense_analysis_success == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: FlowSense analysis is failing for {{ $labels.dag_id }}
+          description: The latest FlowSense analysis did not complete successfully.
+
+      - alert: FlowSenseAnalysisStale
+        expr: time() - flowsense_analysis_last_success_timestamp_seconds > 300
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: FlowSense analysis is stale for {{ $labels.dag_id }}
+          description: No successful FlowSense analysis has been recorded for more than five minutes.
+
+      - alert: FlowSenseCriticalDAG
+        expr: flowsense_dag_overall_severity >= 3
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Critical anomaly detected in {{ $labels.dag_id }}
+          description: The latest DAG analysis has critical severity.
+
+      - alert: FlowSenseCriticalTask
+        expr: flowsense_task_severity >= 3
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Critical task anomaly in {{ $labels.dag_id }}
+          description: Task {{ $labels.task_id }} has critical severity.
+
+      - alert: FlowSenseTaskMetricsDropped
+        expr: flowsense_dag_dropped_tasks > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Task metrics were omitted for {{ $labels.dag_id }}
+          description: Increase the task cardinality limit or publish only DAG-level metrics intentionally.
+
+      - alert: FlowSenseAnalysisSlow
+        expr: flowsense_analysis_duration_seconds > 30
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: FlowSense analysis is slow for {{ $labels.dag_id }}
+          description: Analysis duration has remained above 30 seconds for five minutes.
