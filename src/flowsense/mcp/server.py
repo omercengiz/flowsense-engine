@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from mcp.server import MCPServer
 
-from flowsense.application import AnalysisRequest, analyze_dag, serialize_analysis
+from flowsense.application import AnalysisRequest, AnalyzeDAG, serialize_analysis
 from flowsense.domain import AnalysisPolicy, FlowSenseError, MappedTaskAggregation
-from flowsense.infrastructure.airflow import AirflowClient
+from flowsense.infrastructure.airflow import create_airflow_data_source
 
 mcp = MCPServer("FlowSense Engine")
 
@@ -52,15 +52,7 @@ def analyze_airflow_dag(
             history_run_limit=history_run_limit,
             dag_run_id=dag_run_id,
         )
-        with AirflowClient(
-            history_run_limit=history_run_limit,
-            target_dag_run_id=request.dag_run_id,
-        ) as source:
-            analysis = analyze_dag(
-                dag_id=request.dag_id,
-                source=source,
-                policy=request.policy,
-            )
+        analysis = AnalyzeDAG(create_airflow_data_source).execute(request)
     except FlowSenseError as exc:
         raise RuntimeError(str(exc)) from exc
 
