@@ -4,7 +4,11 @@ from flowsense.application.analysis_engine import (
 )
 from flowsense.application.analyzer import analyze_dag
 from flowsense.application.output import ANALYSIS_SCHEMA_VERSION, AnalysisDocument
-from flowsense.application.ports import DAGAnalysisEngine, DAGDataSource
+from flowsense.application.ports import (
+    AnalysisMetricsSink,
+    DAGAnalysisEngine,
+    DAGDataSource,
+)
 from flowsense.application.request import AnalysisRequest
 from flowsense.application.serialization import (
     analysis_json_schema,
@@ -17,6 +21,7 @@ __all__ = [
     "ANALYSIS_SCHEMA_VERSION",
     "DEFAULT_DAG_ANALYSIS_ENGINE",
     "AnalysisDocument",
+    "AnalysisMetricsSink",
     "AnalysisRequest",
     "AnalyzeDAG",
     "DAGAnalysisEngine",

@@ -55,6 +55,7 @@ def test_top_level_api_declares_supported_exports() -> None:
         "AnalysisPolicy",
         "AnalysisRequest",
         "AnalysisDocument",
+        "AnalysisMetricsSink",
         "ChangeDirection",
         "ChangePointResult",
         "ConfigurationError",

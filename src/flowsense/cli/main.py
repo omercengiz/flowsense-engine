@@ -82,6 +82,41 @@ def show_schema() -> None:
     )
 
 
+@app.command("serve-metrics")
+def serve_metrics(
+    dag_ids: Annotated[
+        list[str],
+        typer.Argument(help="One or more Airflow DAG ids to monitor."),
+    ],
+    host: str = typer.Option("127.0.0.1", help="Metrics server bind address."),
+    port: int = typer.Option(9108, min=1, max=65535),
+    interval_seconds: float = typer.Option(60.0, min=1.0),
+    max_tasks_per_dag: int = typer.Option(
+        200,
+        min=0,
+        help="Maximum task IDs included in task-level metrics per DAG.",
+    ),
+) -> None:
+    """Continuously analyze DAGs and expose Prometheus metrics."""
+    from flowsense.observability.service import run_metrics_service
+
+    console.print(f"Serving metrics at http://{host}:{port}/metrics")
+    try:
+        run_metrics_service(
+            dag_ids,
+            source_factory=create_airflow_data_source,
+            host=host,
+            port=port,
+            interval_seconds=interval_seconds,
+            max_tasks_per_dag=max_tasks_per_dag,
+        )
+    except KeyboardInterrupt:
+        console.print("Metrics service stopped.")
+    except (FlowSenseError, OSError, ValueError) as exc:
+        console.print(f"[bold red]Metrics service failed:[/bold red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+
 @app.command()
 def analyze(
     dag_id: str = typer.Argument(
