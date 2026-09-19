@@ -9,8 +9,8 @@ from rich.console import Console
 
 from flowsense.application import (
     AnalysisRequest,
+    AnalyzeDAG,
     analysis_json_schema,
-    analyze_dag,
     serialize_analysis,
 )
 from flowsense.cli.report import render_analysis
@@ -21,7 +21,10 @@ from flowsense.domain import (
     Severity,
     severity_meets_threshold,
 )
-from flowsense.infrastructure.airflow import AirflowApiError, AirflowClient
+from flowsense.infrastructure.airflow import (
+    AirflowApiError,
+    create_airflow_data_source,
+)
 from flowsense.version import __version__
 
 app = typer.Typer(
@@ -161,15 +164,7 @@ def analyze(
             history_run_limit=history_run_limit,
             dag_run_id=dag_run_id,
         )
-        with AirflowClient(
-            history_run_limit=history_run_limit,
-            target_dag_run_id=request.dag_run_id,
-        ) as source:
-            analysis = analyze_dag(
-                dag_id=request.dag_id,
-                source=source,
-                policy=request.policy,
-            )
+        analysis = AnalyzeDAG(create_airflow_data_source).execute(request)
     except AirflowApiError as exc:
         console.print(f"[bold red]Airflow request failed:[/bold red] {exc}")
         raise typer.Exit(code=1) from exc

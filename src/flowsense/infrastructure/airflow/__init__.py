@@ -4,10 +4,12 @@ from flowsense.infrastructure.airflow.exceptions import (
     AirflowDagRunNotFoundError,
     AirflowDataError,
 )
+from flowsense.infrastructure.airflow.factory import create_airflow_data_source
 
 __all__ = [
     "AirflowApiError",
     "AirflowClient",
     "AirflowDagRunNotFoundError",
     "AirflowDataError",
+    "create_airflow_data_source",
 ]
