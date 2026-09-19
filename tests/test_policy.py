@@ -1,9 +1,8 @@
 import pytest
 
-from flowsense import AnalysisPolicy, MappedTaskAggregation
+from flowsense import AnalysisPolicy, MappedTaskAggregation, TaskRun
 from flowsense.engine.drift import calculate_drift
 from flowsense.engine.history import build_duration_history
-from flowsense.models import TaskRun
 
 
 def test_policy_validates_history_and_thresholds() -> None:
