@@ -165,6 +165,27 @@ def test_selects_more_severe_independent_root() -> None:
     assert result.task_id == "extract_b"
 
 
+def test_uses_task_id_as_deterministic_tie_breaker() -> None:
+    drift_results = {
+        "zeta": _drift("zeta", "CRITICAL"),
+        "alpha": _drift("alpha", "CRITICAL"),
+    }
+    task_impacts = {
+        "zeta": _impact("zeta", "OWN_DRIFT", "CRITICAL"),
+        "alpha": _impact("alpha", "OWN_DRIFT", "CRITICAL"),
+    }
+
+    result = select_primary_origin(
+        drift_results=drift_results,
+        task_impacts=task_impacts,
+        dependencies={"zeta": [], "alpha": []},
+        propagation_results=[],
+    )
+
+    assert result is not None
+    assert result.task_id == "alpha"
+
+
 def test_prefers_higher_propagation_score_between_independent_roots() -> None:
     drift_results = {
         "extract_a": _drift(
