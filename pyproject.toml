@@ -68,12 +68,12 @@ where = ["src"]
 flowsense = ["py.typed"]
 
 [tool.pyright]
-include = ["src"]
+include = ["src", "benchmarks"]
 typeCheckingMode = "standard"
 pythonVersion = "3.12"
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 markers = [
     "integration: tests that require a running Airflow instance",
 ]
