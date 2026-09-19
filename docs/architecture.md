@@ -68,10 +68,11 @@ the infrastructure composition boundary.
 
 ### Delivery adapters
 
-`flowsense.cli` and `flowsense.mcp` translate user input into an
+`flowsense.cli`, `flowsense.mcp`, and `flowsense.observability` translate user input into an
 `AnalysisRequest`, invoke `AnalyzeDAG`, and translate the result into their own
-output mechanism. Business analysis and data-collection orchestration must not
-be duplicated in these adapters.
+output mechanism. Prometheus export implements the `AnalysisMetricsSink` port
+and keeps a bounded latest-value snapshot. Business analysis and data-collection
+orchestration must not be duplicated in these adapters.
 
 ## Main analysis flow
 

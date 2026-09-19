@@ -316,6 +316,17 @@ The server exposes the `analyze_airflow_dag` tool, which returns task drift,
 handoff drift, impact classification, propagation paths, and primary root-cause
 information for a DAG.
 
+## Prometheus
+
+Run continuous analysis and expose the latest DAG and bounded task-level metrics:
+
+```bash
+flowsense serve-metrics example_dag --host 0.0.0.0 --port 9108
+```
+
+See [docs/prometheus.md](docs/prometheus.md) for the metric contract,
+cardinality policy, and Prometheus scrape configuration.
+
 ## Development
 
 Run unit tests:

@@ -1,5 +1,5 @@
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import ANY, MagicMock, patch
 
 from typer.testing import CliRunner
 
@@ -36,6 +36,38 @@ def test_schema_output_is_deterministic() -> None:
     assert first.exit_code == 0
     assert second.exit_code == 0
     assert first.output == second.output
+
+
+def test_serve_metrics_forwards_runtime_configuration() -> None:
+    with patch(
+        "flowsense.observability.service.run_metrics_service"
+    ) as run_metrics_service:
+        result = CliRunner().invoke(
+            app,
+            [
+                "serve-metrics",
+                "first_dag",
+                "second_dag",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "9200",
+                "--interval-seconds",
+                "30",
+                "--max-tasks-per-dag",
+                "50",
+            ],
+        )
+
+    assert result.exit_code == 0
+    run_metrics_service.assert_called_once_with(
+        ["first_dag", "second_dag"],
+        source_factory=ANY,
+        host="0.0.0.0",
+        port=9200,
+        interval_seconds=30.0,
+        max_tasks_per_dag=50,
+    )
 
 
 def test_analyze_reports_airflow_api_errors() -> None:
