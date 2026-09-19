@@ -1,11 +1,11 @@
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, call
 
 import httpx
 import pytest
 
-from flowsense.config import AirflowConfig
 from flowsense.infrastructure.airflow import (
     AirflowApiError,
+    AirflowConfig,
     AirflowDagRunNotFoundError,
     AirflowDataError,
 )
@@ -19,16 +19,15 @@ def http_client() -> MagicMock:
 
 @pytest.fixture
 def client(http_client: MagicMock) -> AirflowClient:
-    with patch(
-        "flowsense.infrastructure.airflow.client.get_airflow_config",
-        return_value=AirflowConfig(
+    airflow_client = AirflowClient(
+        config=AirflowConfig(
             base_url="http://airflow.test",
             username="airflow",
             password="airflow",
             max_retries=0,
         ),
-    ):
-        airflow_client = AirflowClient(http_client=http_client)
+        http_client=http_client,
+    )
 
     airflow_client._token = "token"
     return airflow_client
@@ -238,33 +237,25 @@ def test_collect_task_runs_rejects_missing_target_dag_run(
 
 
 def test_rejects_history_run_limit_below_two(http_client: MagicMock) -> None:
-    with (
-        patch(
-            "flowsense.infrastructure.airflow.client.get_airflow_config",
-            return_value=AirflowConfig(
-                base_url="http://airflow.test",
-                username="airflow",
-                password="airflow",
-            ),
-        ),
-        pytest.raises(ValueError, match="history_run_limit"),
-    ):
-        AirflowClient(history_run_limit=1, http_client=http_client)
+    config = AirflowConfig(
+        base_url="http://airflow.test",
+        username="airflow",
+        password="airflow",
+    )
+
+    with pytest.raises(ValueError, match="history_run_limit"):
+        AirflowClient(config, history_run_limit=1, http_client=http_client)
 
 
 def test_rejects_blank_target_dag_run_id(http_client: MagicMock) -> None:
-    with (
-        patch(
-            "flowsense.infrastructure.airflow.client.get_airflow_config",
-            return_value=AirflowConfig(
-                base_url="http://airflow.test",
-                username="airflow",
-                password="airflow",
-            ),
-        ),
-        pytest.raises(ValueError, match="target_dag_run_id"),
-    ):
-        AirflowClient(target_dag_run_id=" ", http_client=http_client)
+    config = AirflowConfig(
+        base_url="http://airflow.test",
+        username="airflow",
+        password="airflow",
+    )
+
+    with pytest.raises(ValueError, match="target_dag_run_id"):
+        AirflowClient(config, target_dag_run_id=" ", http_client=http_client)
 
 
 def test_wraps_http_status_errors_without_response_body(

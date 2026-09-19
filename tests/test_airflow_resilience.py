@@ -1,10 +1,9 @@
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, call
 
 import httpx
 import pytest
 
-from flowsense.config import AirflowConfig
-from flowsense.infrastructure.airflow import AirflowApiError
+from flowsense.infrastructure.airflow import AirflowApiError, AirflowConfig
 from flowsense.infrastructure.airflow.client import AirflowClient
 
 
@@ -17,9 +16,8 @@ def _client(
     connect_timeout: float = 3.0,
     read_timeout: float = 7.0,
 ) -> AirflowClient:
-    with patch(
-        "flowsense.infrastructure.airflow.client.get_airflow_config",
-        return_value=AirflowConfig(
+    client = AirflowClient(
+        config=AirflowConfig(
             base_url="http://airflow.test",
             username="airflow",
             password="airflow",
@@ -28,8 +26,9 @@ def _client(
             connect_timeout=connect_timeout,
             read_timeout=read_timeout,
         ),
-    ):
-        client = AirflowClient(http_client=http_client, sleep=sleep)
+        http_client=http_client,
+        sleep=sleep,
+    )
 
     client._token = "token"
     return client

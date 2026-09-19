@@ -9,8 +9,8 @@ from typing import Any, Literal, Self
 import httpx
 from pydantic import ValidationError
 
-from flowsense.config import get_airflow_config
 from flowsense.domain import ConfigurationError, TaskRun
+from flowsense.infrastructure.airflow.config import AirflowConfig
 from flowsense.infrastructure.airflow.dto import (
     AirflowDagRunDTO,
     AirflowTaskDTO,
@@ -35,39 +35,22 @@ RETRYABLE_STATUS_CODES = frozenset({429, 502, 503, 504})
 class AirflowClient:
     def __init__(
         self,
-        base_url: str | None = None,
-        username: str | None = None,
-        password: str | None = None,
-        api_version: AirflowApiVersion | None = None,
-        auth_mode: AirflowAuthMode | None = None,
-        connect_timeout: float | None = None,
-        read_timeout: float | None = None,
-        max_retries: int | None = None,
-        retry_backoff: float | None = None,
+        config: AirflowConfig,
+        *,
         history_run_limit: int | None = None,
         target_dag_run_id: str | None = None,
         http_client: httpx.Client | None = None,
         sleep: Callable[[float], None] | None = None,
     ):
-        config = get_airflow_config()
-
-        self.base_url = (base_url or config.base_url).rstrip("/")
-        self.username = username or config.username
-        self.password = password or config.password
-        self.api_version = api_version or config.api_version
-        self.auth_mode = auth_mode or config.auth_mode
-        self.connect_timeout = (
-            connect_timeout if connect_timeout is not None else config.connect_timeout
-        )
-        self.read_timeout = (
-            read_timeout if read_timeout is not None else config.read_timeout
-        )
-        self.max_retries = (
-            max_retries if max_retries is not None else config.max_retries
-        )
-        self.retry_backoff = (
-            retry_backoff if retry_backoff is not None else config.retry_backoff
-        )
+        self.base_url = config.base_url.rstrip("/")
+        self.username = config.username
+        self.password = config.password
+        self.api_version = config.api_version
+        self.auth_mode = config.auth_mode
+        self.connect_timeout = config.connect_timeout
+        self.read_timeout = config.read_timeout
+        self.max_retries = config.max_retries
+        self.retry_backoff = config.retry_backoff
         self.history_run_limit = (
             history_run_limit
             if history_run_limit is not None

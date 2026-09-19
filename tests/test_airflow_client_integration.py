@@ -2,17 +2,17 @@ from __future__ import annotations
 
 import pytest
 
-from flowsense.collector.airflow_client import AirflowClient
 from flowsense.engine.drift import calculate_drift
 from flowsense.engine.history import build_duration_history
 from flowsense.engine.propagation import analyze_propagation
+from flowsense.infrastructure.airflow import AirflowClient, load_airflow_config
 
 DAG_ID = "flowsense_demo"
 
 
 @pytest.mark.integration
 def test_flowsense_demo_analysis() -> None:
-    client = AirflowClient()
+    client = AirflowClient(load_airflow_config())
 
     task_runs = client.collect_task_runs(DAG_ID)
 
