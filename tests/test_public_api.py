@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import flowsense
 
 
@@ -19,6 +21,29 @@ def test_top_level_api_analyzes_custom_data_source() -> None:
     assert analysis.overall_severity is flowsense.Severity.NORMAL
 
 
+def test_top_level_api_accepts_custom_analysis_engine() -> None:
+    engine = MagicMock(spec=flowsense.DAGAnalysisEngine)
+    engine.analyze.return_value = flowsense.DAGAnalysis(
+        dag_id="demo",
+        runs_analyzed=0,
+        overall_severity=flowsense.Severity.NORMAL,
+        primary_origin=None,
+        drift_results={},
+        handoff_drift_results={},
+        task_impacts={},
+        propagation_results=[],
+        dependencies={},
+    )
+
+    analysis = flowsense.analyze_dag(
+        dag_id="demo",
+        source=EmptyDataSource(),
+        analysis_engine=engine,
+    )
+
+    assert analysis is engine.analyze.return_value
+
+
 def test_top_level_api_declares_supported_exports() -> None:
     expected_exports = {
         "AirflowApiError",
@@ -26,6 +51,7 @@ def test_top_level_api_declares_supported_exports() -> None:
         "AirflowDagRunNotFoundError",
         "AirflowDataError",
         "ANALYSIS_SCHEMA_VERSION",
+        "DEFAULT_DAG_ANALYSIS_ENGINE",
         "AnalysisPolicy",
         "AnalysisRequest",
         "AnalysisDocument",
@@ -33,8 +59,10 @@ def test_top_level_api_declares_supported_exports() -> None:
         "ChangePointResult",
         "ConfigurationError",
         "DAGAnalysis",
+        "DAGAnalysisEngine",
         "DAGAnalysisSummary",
         "DAGDataSource",
+        "DefaultDAGAnalysisEngine",
         "Severity",
         "MappedTaskAggregation",
         "TaskRun",

@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from flowsense.domain import TaskRun
+from flowsense.domain import AnalysisPolicy, DAGAnalysis, TaskRun
 
 
 class DAGDataSource(Protocol):
@@ -9,3 +9,15 @@ class DAGDataSource(Protocol):
         ...
 
     def get_dag_dependencies(self, dag_id: str) -> dict[str, list[str]]: ...
+
+
+class DAGAnalysisEngine(Protocol):
+    """Analyze already collected domain data without performing I/O."""
+
+    def analyze(
+        self,
+        dag_id: str,
+        task_runs: list[TaskRun],
+        dependencies: dict[str, list[str]],
+        policy: AnalysisPolicy,
+    ) -> DAGAnalysis: ...
