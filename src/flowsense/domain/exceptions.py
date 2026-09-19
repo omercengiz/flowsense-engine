@@ -23,3 +23,9 @@ class InsufficientHistoryError(FlowSenseError, ValueError):
 
 class InvalidTaskTimingError(FlowSenseError, ValueError):
     """Raised when task timestamps cannot produce a valid handoff timing."""
+
+
+class InvalidObservationError(FlowSenseError, ValueError):
+    def __init__(self, subject_id: str) -> None:
+        self.subject_id = subject_id
+        super().__init__(f"{subject_id} contains a non-finite observation.")

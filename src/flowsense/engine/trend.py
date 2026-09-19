@@ -5,6 +5,7 @@ import math
 import numpy as np
 
 from flowsense.domain import TrendDirection, TrendResult
+from flowsense.engine.validation import validate_finite_observations
 
 
 def _theil_sen_slope(observations: np.ndarray) -> float:
@@ -25,6 +26,8 @@ def detect_trend(
     minimum_directional_consistency: float = 0.6,
 ) -> TrendResult | None:
     """Detect a sustained linear trend using a robust Theil-Sen slope."""
+    validate_finite_observations(subject_id, values)
+
     if minimum_observations < 3:
         raise ValueError("minimum_observations must be at least 3")
 
