@@ -152,6 +152,17 @@
       "targets": [{"editorMode": "code", "expr": "flowsense_analysis_last_success_timestamp_seconds{dag_id=~\"$dag_id\"} * 1000", "instant": true, "legendFormat": "{{dag_id}}", "range": false, "refId": "A"}],
       "title": "Last successful analysis",
       "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "flowsense-prometheus"},
+      "fieldConfig": {"defaults": {"custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}, "overrides": []},
+      "gridPos": {"h": 7, "w": 24, "x": 0, "y": 21},
+      "id": 13,
+      "options": {"cellHeight": "sm", "footer": {"countRows": false, "fields": "", "reducer": ["sum"], "show": false}, "showHeader": true},
+      "targets": [{"editorMode": "code", "expr": "ALERTS{alertname=~\"FlowSense.*\",alertstate=\"firing\"}", "format": "table", "instant": true, "legendFormat": "__auto", "range": false, "refId": "A"}],
+      "title": "Active FlowSense alerts",
+      "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true}, "indexByName": {}, "renameByName": {"Value": "Firing"}}}],
+      "type": "table"
     }
   ],
   "refresh": "30s",
