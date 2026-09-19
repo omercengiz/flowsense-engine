@@ -17,14 +17,14 @@ def test_version_outputs_installed_package_version() -> None:
 
 
 def test_schema_outputs_versioned_json_schema_without_airflow() -> None:
-    with patch("flowsense.cli.main.AirflowClient") as client_class:
+    with patch("flowsense.cli.main.create_airflow_data_source") as source_factory:
         result = CliRunner().invoke(app, ["schema"])
 
     assert result.exit_code == 0
     schema = json.loads(result.output)
     assert schema["properties"]["schema_version"]["const"] == (ANALYSIS_SCHEMA_VERSION)
     assert schema["title"] == "AnalysisDocument"
-    client_class.assert_not_called()
+    source_factory.assert_not_called()
 
 
 def test_schema_output_is_deterministic() -> None:
@@ -45,8 +45,10 @@ def test_analyze_reports_airflow_api_errors() -> None:
         status_code=503,
     )
 
-    with patch("flowsense.cli.main.AirflowClient") as client_class:
-        client_class.return_value.__enter__.side_effect = error
+    with patch(
+        "flowsense.cli.main.create_airflow_data_source",
+        side_effect=error,
+    ):
         result = CliRunner().invoke(app, ["analyze", "demo"])
 
     assert result.exit_code == 1
@@ -56,7 +58,7 @@ def test_analyze_reports_airflow_api_errors() -> None:
 
 def test_analyze_reports_configuration_errors_without_traceback() -> None:
     with patch(
-        "flowsense.cli.main.AirflowClient",
+        "flowsense.cli.main.create_airflow_data_source",
         side_effect=ConfigurationError("AIRFLOW_USERNAME is required."),
     ):
         result = CliRunner().invoke(app, ["analyze", "demo"])
@@ -69,8 +71,10 @@ def test_analyze_reports_configuration_errors_without_traceback() -> None:
 
 def test_analyze_builds_structural_analysis_policy_from_options() -> None:
     with (
-        patch("flowsense.cli.main.AirflowClient"),
-        patch("flowsense.cli.main.analyze_dag", return_value=MagicMock()) as analyze,
+        patch("flowsense.cli.main.create_airflow_data_source"),
+        patch(
+            "flowsense.cli.main.AnalyzeDAG.execute", return_value=MagicMock()
+        ) as execute,
         patch("flowsense.cli.main.render_analysis"),
     ):
         result = CliRunner().invoke(
@@ -94,7 +98,7 @@ def test_analyze_builds_structural_analysis_policy_from_options() -> None:
         )
 
     assert result.exit_code == 0
-    policy = analyze.call_args.kwargs["policy"]
+    policy = execute.call_args.args[0].policy
     assert policy.change_point_detection_enabled is False
     assert policy.change_point_minimum_segment_size == 4
     assert policy.change_point_score_threshold == 4.5
@@ -118,8 +122,8 @@ def test_analyze_outputs_versioned_json() -> None:
     )
 
     with (
-        patch("flowsense.cli.main.AirflowClient"),
-        patch("flowsense.cli.main.analyze_dag", return_value=analysis),
+        patch("flowsense.cli.main.create_airflow_data_source"),
+        patch("flowsense.cli.main.AnalyzeDAG.execute", return_value=analysis),
         patch("flowsense.cli.main.render_analysis") as render_analysis,
     ):
         result = CliRunner().invoke(app, ["analyze", "demo", "--output", "json"])
@@ -136,8 +140,10 @@ def test_analyze_overrides_airflow_history_run_limit() -> None:
     analysis = _analysis_with_severity(Severity.NORMAL)
 
     with (
-        patch("flowsense.cli.main.AirflowClient") as client_class,
-        patch("flowsense.cli.main.analyze_dag", return_value=analysis),
+        patch("flowsense.cli.main.create_airflow_data_source"),
+        patch(
+            "flowsense.cli.main.AnalyzeDAG.execute", return_value=analysis
+        ) as execute,
         patch("flowsense.cli.main.render_analysis"),
     ):
         result = CliRunner().invoke(
@@ -146,18 +152,19 @@ def test_analyze_overrides_airflow_history_run_limit() -> None:
         )
 
     assert result.exit_code == 0
-    client_class.assert_called_once_with(
-        history_run_limit=250,
-        target_dag_run_id=None,
-    )
+    request = execute.call_args.args[0]
+    assert request.history_run_limit == 250
+    assert request.dag_run_id is None
 
 
 def test_analyze_selects_historical_dag_run() -> None:
     analysis = _analysis_with_severity(Severity.NORMAL)
 
     with (
-        patch("flowsense.cli.main.AirflowClient") as client_class,
-        patch("flowsense.cli.main.analyze_dag", return_value=analysis),
+        patch("flowsense.cli.main.create_airflow_data_source"),
+        patch(
+            "flowsense.cli.main.AnalyzeDAG.execute", return_value=analysis
+        ) as execute,
         patch("flowsense.cli.main.render_analysis"),
     ):
         result = CliRunner().invoke(
@@ -166,14 +173,13 @@ def test_analyze_selects_historical_dag_run() -> None:
         )
 
     assert result.exit_code == 0
-    client_class.assert_called_once_with(
-        history_run_limit=None,
-        target_dag_run_id="run_42",
-    )
+    request = execute.call_args.args[0]
+    assert request.history_run_limit is None
+    assert request.dag_run_id == "run_42"
 
 
 def test_analyze_rejects_inconsistent_history_settings_before_airflow() -> None:
-    with patch("flowsense.cli.main.AirflowClient") as client_class:
+    with patch("flowsense.cli.main.create_airflow_data_source") as source_factory:
         result = CliRunner().invoke(
             app,
             [
@@ -188,15 +194,15 @@ def test_analyze_rejects_inconsistent_history_settings_before_airflow() -> None:
 
     assert result.exit_code == 1
     assert "history_run_limit must be at least minimum_history" in result.output
-    client_class.assert_not_called()
+    source_factory.assert_not_called()
 
 
 def test_analyze_exits_with_threshold_code_after_rendering_report() -> None:
     analysis = _analysis_with_severity(Severity.HIGH)
 
     with (
-        patch("flowsense.cli.main.AirflowClient"),
-        patch("flowsense.cli.main.analyze_dag", return_value=analysis),
+        patch("flowsense.cli.main.create_airflow_data_source"),
+        patch("flowsense.cli.main.AnalyzeDAG.execute", return_value=analysis),
         patch("flowsense.cli.main.render_analysis") as render_analysis,
     ):
         result = CliRunner().invoke(app, ["analyze", "demo", "--fail-on", "high"])
@@ -209,8 +215,8 @@ def test_analyze_succeeds_when_severity_is_below_threshold() -> None:
     analysis = _analysis_with_severity(Severity.MEDIUM)
 
     with (
-        patch("flowsense.cli.main.AirflowClient"),
-        patch("flowsense.cli.main.analyze_dag", return_value=analysis),
+        patch("flowsense.cli.main.create_airflow_data_source"),
+        patch("flowsense.cli.main.AnalyzeDAG.execute", return_value=analysis),
         patch("flowsense.cli.main.render_analysis"),
     ):
         result = CliRunner().invoke(app, ["analyze", "demo", "--fail-on", "high"])
@@ -222,8 +228,8 @@ def test_analyze_outputs_valid_json_before_threshold_exit() -> None:
     analysis = _analysis_with_severity(Severity.CRITICAL)
 
     with (
-        patch("flowsense.cli.main.AirflowClient"),
-        patch("flowsense.cli.main.analyze_dag", return_value=analysis),
+        patch("flowsense.cli.main.create_airflow_data_source"),
+        patch("flowsense.cli.main.AnalyzeDAG.execute", return_value=analysis),
     ):
         result = CliRunner().invoke(
             app,

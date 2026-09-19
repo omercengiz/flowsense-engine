@@ -71,22 +71,23 @@ def test_analyze_tool_overrides_airflow_history_run_limit() -> None:
     )
 
     with (
-        patch("flowsense.mcp.server.AirflowClient") as client_class,
-        patch("flowsense.mcp.server.analyze_dag", return_value=analysis),
+        patch("flowsense.mcp.server.create_airflow_data_source"),
+        patch(
+            "flowsense.mcp.server.AnalyzeDAG.execute", return_value=analysis
+        ) as execute,
     ):
         result = analyze_airflow_dag("demo", history_run_limit=250)
 
     assert result["dag_id"] == "demo"
-    client_class.assert_called_once_with(
-        history_run_limit=250,
-        target_dag_run_id=None,
-    )
+    request = execute.call_args.args[0]
+    assert request.history_run_limit == 250
+    assert request.dag_run_id is None
 
 
 def test_analyze_tool_translates_expected_errors() -> None:
     with (
         patch(
-            "flowsense.mcp.server.AirflowClient",
+            "flowsense.mcp.server.create_airflow_data_source",
             side_effect=ConfigurationError("AIRFLOW_USERNAME is required."),
         ),
         pytest.raises(RuntimeError, match="AIRFLOW_USERNAME is required"),
@@ -96,7 +97,7 @@ def test_analyze_tool_translates_expected_errors() -> None:
 
 def test_analyze_tool_rejects_inconsistent_history_settings_before_airflow() -> None:
     with (
-        patch("flowsense.mcp.server.AirflowClient") as client_class,
+        patch("flowsense.mcp.server.create_airflow_data_source") as source_factory,
         pytest.raises(RuntimeError, match="history_run_limit"),
     ):
         analyze_airflow_dag(
@@ -105,7 +106,7 @@ def test_analyze_tool_rejects_inconsistent_history_settings_before_airflow() -> 
             history_run_limit=10,
         )
 
-    client_class.assert_not_called()
+    source_factory.assert_not_called()
 
 
 def test_serialize_analysis() -> None:

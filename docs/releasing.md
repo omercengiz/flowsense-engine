@@ -33,9 +33,11 @@ After the release pull request is merged into `master` and CI passes:
 ```bash
 git switch master
 git pull --ff-only origin master
-git tag -a v0.2.0 -m "FlowSense 0.2.0"
-git push origin v0.2.0
+git tag -a v0.2.1 -m "FlowSense 0.2.1"
+git push origin v0.2.1
 ```
 
-Package publication should run only from the protected release tag and only after
-the built artifacts have been verified.
+Create and publish the corresponding GitHub Release after pushing the tag. The
+release workflow builds that exact tag and publishes it through the protected
+`pypi` environment. Package publication should run only after the built artifacts
+have been verified.

@@ -3,6 +3,14 @@
 All notable changes to FlowSense are documented in this file. The project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-09-10
+
+### Changed
+
+- Renamed the Python distribution to `flowsense-engine` while preserving the
+  `flowsense` import package and CLI command.
+- Added tokenless PyPI publishing through GitHub Actions Trusted Publishing.
+
 ## [0.2.0] - 2026-09-10
 
 ### Added
