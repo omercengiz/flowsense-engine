@@ -13,6 +13,7 @@ FORBIDDEN_IMPORTS = {
         "flowsense.infrastructure",
         "flowsense.mcp",
         "flowsense.models",
+        "pydantic",
     ),
     "engine": (
         "flowsense.application",

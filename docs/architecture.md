@@ -30,7 +30,8 @@ concrete infrastructure implementations.
 `flowsense.domain` contains the analysis vocabulary: task runs, policies,
 severity and impact classifications, results, and expected domain failures.
 It must not import application, infrastructure, CLI, MCP, or compatibility
-modules.
+modules. Domain entities and results use standard-library dataclasses; they do
+not depend on validation or transport frameworks.
 
 `flowsense.engine` currently contains pure analysis services such as drift,
 trend, handoff, propagation, and root-cause calculations. These services may
@@ -51,6 +52,9 @@ already own a data source.
 
 `flowsense.infrastructure.airflow` implements Airflow HTTP access. Pydantic DTOs
 validate external API payloads and mappers translate them into domain objects.
+Pydantic is intentionally restricted to infrastructure DTOs and application
+output contracts, where runtime boundary validation and JSON Schema generation
+are required.
 
 `AirflowClient` receives an explicit `AirflowConfig` and never reads environment
 variables. `load_airflow_config()` and `create_airflow_data_source()` belong to
