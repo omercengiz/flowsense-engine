@@ -8,15 +8,16 @@ from mcp.client.stdio import stdio_client
 
 from flowsense import (
     ANALYSIS_SCHEMA_VERSION,
+    AnalysisDiagnostic,
     ChangePointResult,
     ConfigurationError,
+    DAGAnalysis,
+    DriftResult,
+    RootCauseResult,
+    TaskImpact,
     TrendResult,
 )
-from flowsense.engine.drift import DriftResult
-from flowsense.engine.impact import TaskImpact
-from flowsense.engine.root_cause import RootCauseResult
 from flowsense.mcp.server import analyze_airflow_dag, serialize_analysis
-from flowsense.models import AnalysisDiagnostic, DAGAnalysis
 
 
 @pytest.fixture

@@ -29,22 +29,22 @@ jobs:
         uses: astral-sh/setup-uv@v6
 
       - name: Install dependencies
-        run: uv pip install --system -e ".[dev,mcp]"
+        run: uv sync --locked --all-extras
 
       - name: Run Ruff
-        run: ruff check .
+        run: uv run ruff check .
 
       - name: Check formatting
-        run: ruff format --check .
+        run: uv run ruff format --check .
 
       - name: Run Pyright
-        run: pyright
+        run: uv run pyright
 
       - name: Run unit tests
-        run: python -m pytest -m "not integration" -v
+        run: uv run python -m pytest -m "not integration" -v
 
       - name: Build package
-        run: python -m build
+        run: uv run python -m build
 
       - name: Smoke test wheel
         run: |

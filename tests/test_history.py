@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 
+from flowsense.domain import TaskRun
 from flowsense.engine.history import build_duration_history
-from flowsense.models import TaskRun
 
 
 def test_build_duration_history() -> None:

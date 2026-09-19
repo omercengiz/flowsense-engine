@@ -1,6 +1,4 @@
-from flowsense.engine.drift import DriftResult
-from flowsense.engine.impact import TaskImpact
-from flowsense.engine.propagation import PropagationResult
+from flowsense.domain import DriftResult, PropagationResult, TaskImpact
 from flowsense.engine.root_cause import select_primary_origin
 
 

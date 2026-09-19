@@ -1,4 +1,4 @@
-from flowsense.engine.drift import DriftResult
+from flowsense.domain import DriftResult
 from flowsense.engine.propagation import analyze_propagation
 
 
