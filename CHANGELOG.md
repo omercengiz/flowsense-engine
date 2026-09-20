@@ -7,6 +7,8 @@ All notable changes to FlowSense are documented in this file. The project uses
 
 ### Added
 
+- Added paginated Airflow 2 and 3 DAG discovery with optional paused-DAG
+  inclusion.
 - Added an immutable multi-DAG analysis result and bounded, opt-in concurrency
   through `FlowSenseClient.analyze_many()`.
 - Added a versioned, typed batch output document with serialization and JSON

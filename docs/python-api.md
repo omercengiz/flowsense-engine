@@ -78,6 +78,21 @@ external output contract is required.
 
 ## Analyze multiple DAGs
 
+Airflow-backed applications can discover active DAG ids before starting a
+batch. Discovery uses the configured, paginated Airflow 2 or 3 REST API:
+
+```python
+from flowsense.infrastructure.airflow import AirflowClient
+
+with AirflowClient(config, auth_provider=auth_provider) as airflow:
+    dag_ids = airflow.list_dag_ids()
+
+result = client.analyze_many(dag_ids, max_concurrency=3)
+```
+
+Paused DAGs are excluded by default. Pass `include_paused=True` when they are
+also required.
+
 `analyze_many()` is intended for applications that monitor several DAGs in one
 process. It preserves the requested DAG order and separates successful analyses
 from expected FlowSense failures:

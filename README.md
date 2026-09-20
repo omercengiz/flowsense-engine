@@ -280,6 +280,9 @@ result = client.analyze_many(
 )
 ```
 
+`AirflowClient.list_dag_ids()` provides paginated DAG discovery and excludes
+paused DAGs by default.
+
 `serialize_batch_analysis(result)` converts the result into the stable batch
 output contract without exposing raw exception objects.
 

@@ -21,6 +21,11 @@ class AirflowDagRunDTO(AirflowDTO):
     queued_at: datetime | None = None
 
 
+class AirflowDagDTO(AirflowDTO):
+    dag_id: str
+    is_paused: bool = False
+
+
 class AirflowTaskInstanceDTO(AirflowDTO):
     task_id: str
     state: str | None = None
