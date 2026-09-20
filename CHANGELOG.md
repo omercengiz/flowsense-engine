@@ -5,6 +5,8 @@ All notable changes to FlowSense are documented in this file. The project uses
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-20
+
 ### Added
 
 - Added paginated Airflow 2 and 3 DAG discovery with optional paused-DAG
