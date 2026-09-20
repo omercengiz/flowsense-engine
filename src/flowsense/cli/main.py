@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from enum import StrEnum
+from pathlib import Path
 from typing import Annotated
 
 import typer
@@ -10,8 +11,10 @@ from rich.console import Console
 from flowsense.application import (
     AnalysisRequest,
     AnalyzeDAG,
+    FlowSenseClient,
     analysis_json_schema,
     serialize_analysis,
+    serialize_batch_analysis,
 )
 from flowsense.cli.doctor import DiagnosticStatus, run_airflow_diagnostics
 from flowsense.cli.report import render_analysis
@@ -156,6 +159,54 @@ def list_dags(
 
     for dag_id in dag_ids:
         console.print(dag_id)
+
+
+@app.command("analyze-batch")
+def analyze_batch(
+    dag_ids: Annotated[
+        list[str],
+        typer.Argument(help="One or more Airflow DAG ids to analyze."),
+    ],
+    history_run_limit: int | None = typer.Option(
+        None,
+        min=2,
+        help="Limit collection to the most recent successful runs per DAG.",
+    ),
+    max_concurrency: int = typer.Option(
+        1,
+        min=1,
+        help="Maximum number of concurrent DAG analyses.",
+    ),
+    output_file: Annotated[
+        Path | None,
+        typer.Option(
+            "--output-file",
+            help="Write batch JSON to this file instead of standard output.",
+        ),
+    ] = None,
+) -> None:
+    """Analyze multiple explicit DAG ids and emit versioned batch JSON."""
+    try:
+        result = FlowSenseClient(create_airflow_data_source).analyze_many(
+            dag_ids,
+            history_run_limit=history_run_limit,
+            max_concurrency=max_concurrency,
+        )
+        rendered = json.dumps(
+            serialize_batch_analysis(result),
+            indent=2,
+            ensure_ascii=False,
+        )
+        if output_file is None:
+            typer.echo(rendered)
+        else:
+            output_file.write_text(f"{rendered}\n", encoding="utf-8")
+    except (FlowSenseError, OSError) as exc:
+        console.print(f"[bold red]Batch analysis failed:[/bold red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    if result.failures:
+        raise typer.Exit(code=1)
 
 
 @app.command("serve-metrics")

@@ -79,6 +79,19 @@ flowsense dags --output json
 
 Paused DAGs are excluded unless `--include-paused` is provided.
 
+Analyze an explicit, bounded DAG set directly from the CLI:
+
+```bash
+flowsense analyze-batch orders payments inventory \
+  --history-run-limit 50 \
+  --max-concurrency 3 \
+  --output-file flowsense-batch.json
+```
+
+The command always writes the versioned batch JSON when analysis completes. It
+returns exit code `1` if any DAG has an expected failure, while preserving all
+successful results and failure records in the output file.
+
 Start with a DAG that has several successful historical runs:
 
 ```bash
