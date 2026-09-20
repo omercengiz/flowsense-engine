@@ -2,7 +2,7 @@
 
 Temporal drift, anomaly detection, and dependency-aware propagation analysis for Apache Airflow.
 
-Current package release: `0.3.0`. See [CHANGELOG.md](CHANGELOG.md) for release
+Current package release: `0.4.0`. See [CHANGELOG.md](CHANGELOG.md) for release
 notes, [docs/architecture.md](docs/architecture.md) for the system architecture,
 [docs/benchmarks.md](docs/benchmarks.md) for performance measurement, and
 [docs/migrating-to-0.3.md](docs/migrating-to-0.3.md) for migration guidance.
