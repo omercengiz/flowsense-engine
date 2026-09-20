@@ -5,7 +5,8 @@ Temporal drift, anomaly detection, and dependency-aware propagation analysis for
 Current package release: `0.4.0`. See [CHANGELOG.md](CHANGELOG.md) for release
 notes, [docs/architecture.md](docs/architecture.md) for the system architecture,
 [docs/benchmarks.md](docs/benchmarks.md) for performance measurement, and
-[docs/migrating-to-0.3.md](docs/migrating-to-0.3.md) for migration guidance.
+[docs/production-quickstart.md](docs/production-quickstart.md) for a production
+walkthrough. See [docs/migrating-to-0.3.md](docs/migrating-to-0.3.md) for migration guidance.
 Maintainers can use [docs/releasing.md](docs/releasing.md) as the release checklist.
 
 FlowSense analyzes historical DAG executions to identify abnormal task behavior and trace how anomalies propagate through downstream dependencies.
@@ -117,6 +118,9 @@ Once published on PyPI, install the distribution with:
 ```bash
 pip install flowsense-engine
 ```
+
+For an end-to-end Airflow setup, follow the
+[production quickstart](docs/production-quickstart.md).
 
 The distribution name is `flowsense-engine`; Python imports and CLI commands
 remain `flowsense`.
