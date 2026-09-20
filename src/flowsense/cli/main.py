@@ -177,6 +177,13 @@ def analyze_batch(
         min=1,
         help="Maximum number of concurrent DAG analyses.",
     ),
+    fail_on: Annotated[
+        FailureThreshold | None,
+        typer.Option(
+            "--fail-on",
+            help="Exit with code 2 when any DAG reaches this severity.",
+        ),
+    ] = None,
     output_file: Annotated[
         Path | None,
         typer.Option(
@@ -207,6 +214,14 @@ def analyze_batch(
 
     if result.failures:
         raise typer.Exit(code=1)
+
+    if fail_on is not None:
+        threshold = Severity(fail_on.value.upper())
+        if any(
+            severity_meets_threshold(analysis.overall_severity, threshold)
+            for analysis in result.analyses.values()
+        ):
+            raise typer.Exit(code=ANALYSIS_THRESHOLD_EXIT_CODE)
 
 
 @app.command("serve-metrics")

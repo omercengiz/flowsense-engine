@@ -13,6 +13,7 @@ All notable changes to FlowSense are documented in this file. The project uses
 - Added `flowsense dags` for read-only DAG discovery with table and JSON output.
 - Added `flowsense analyze-batch` for bounded multi-DAG CLI analysis with the
   versioned batch JSON contract.
+- Added severity-based CI exit thresholds to batch analysis.
 
 ## [0.4.0] - 2026-09-20
 

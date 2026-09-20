@@ -193,6 +193,9 @@ flowsense analyze <dag_id>
 flowsense analyze-batch <dag_id> [<dag_id> ...]
 ```
 
+Both single and batch analysis commands support `--fail-on` for CI severity
+gates.
+
 The CLI report includes a DAG summary and separate tables for task drift,
 handoff drift, change points, trends, propagation paths, and diagnostics.
 Results are ordered by severity or subject so repeated analyses remain easy to
