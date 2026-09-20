@@ -496,6 +496,35 @@ def test_analyze_outputs_versioned_json() -> None:
     render_analysis.assert_not_called()
 
 
+def test_analyze_writes_versioned_json_to_file(tmp_path: Path) -> None:
+    analysis = _analysis_with_severity(Severity.CRITICAL)
+    output_path = tmp_path / "analysis.json"
+
+    with (
+        patch("flowsense.cli.main.create_airflow_data_source"),
+        patch("flowsense.cli.main.AnalyzeDAG.execute", return_value=analysis),
+        patch("flowsense.cli.main.render_analysis") as render_analysis,
+    ):
+        result = CliRunner().invoke(
+            app,
+            [
+                "analyze",
+                "demo",
+                "--output-file",
+                str(output_path),
+                "--fail-on",
+                "high",
+            ],
+        )
+
+    assert result.exit_code == 2
+    document = json.loads(output_path.read_text(encoding="utf-8"))
+    assert document["schema_version"] == ANALYSIS_SCHEMA_VERSION
+    assert document["overall_severity"] == "CRITICAL"
+    assert result.output == ""
+    render_analysis.assert_not_called()
+
+
 def test_analyze_overrides_airflow_history_run_limit() -> None:
     analysis = _analysis_with_severity(Severity.NORMAL)
 

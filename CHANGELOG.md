@@ -19,6 +19,8 @@ All notable changes to FlowSense are documented in this file. The project uses
   `--dag-limit`, and optional paused-DAG inclusion.
 - Added CLI access to the versioned batch output JSON Schema through
   `flowsense schema --document batch`.
+- Added reliable versioned JSON file output to single-DAG analysis through
+  `flowsense analyze --output-file`.
 
 ## [0.4.0] - 2026-09-20
 

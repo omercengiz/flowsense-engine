@@ -135,7 +135,9 @@ selected severity threshold was reached.
 For CI:
 
 ```bash
-flowsense analyze example_dag --output json --fail-on high > analysis.json
+flowsense analyze example_dag \
+  --output-file analysis.json \
+  --fail-on high
 ```
 
 ## 4. Discover and analyze several DAGs
