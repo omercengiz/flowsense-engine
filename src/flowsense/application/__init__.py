@@ -11,6 +11,11 @@ from flowsense.application.output import (
     AnalysisDocument,
     BatchAnalysisDocument,
 )
+from flowsense.application.policy_document import (
+    ANALYSIS_POLICY_SCHEMA_VERSION,
+    AnalysisPolicyDocument,
+    analysis_policy_json_schema,
+)
 from flowsense.application.ports import (
     AnalysisMetricsSink,
     DAGAnalysisEngine,
@@ -28,11 +33,13 @@ from flowsense.application.serialization import (
 from flowsense.application.use_cases import AnalyzeDAG, DAGDataSourceFactory
 
 __all__ = [
+    "ANALYSIS_POLICY_SCHEMA_VERSION",
     "ANALYSIS_SCHEMA_VERSION",
     "BATCH_ANALYSIS_SCHEMA_VERSION",
     "DEFAULT_DAG_ANALYSIS_ENGINE",
     "AnalysisDocument",
     "AnalysisMetricsSink",
+    "AnalysisPolicyDocument",
     "AnalysisRequest",
     "AnalyzeDAG",
     "BatchAnalysisDocument",
@@ -43,6 +50,7 @@ __all__ = [
     "DefaultDAGAnalysisEngine",
     "FlowSenseClient",
     "analysis_json_schema",
+    "analysis_policy_json_schema",
     "analyze_dag",
     "batch_analysis_json_schema",
     "build_analysis_document",
