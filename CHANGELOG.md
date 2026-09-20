@@ -9,6 +9,8 @@ All notable changes to FlowSense are documented in this file. The project uses
 
 - Added an immutable multi-DAG analysis result and bounded, opt-in concurrency
   through `FlowSenseClient.analyze_many()`.
+- Added a versioned, typed batch output document with serialization and JSON
+  Schema helpers.
 - Added the `FlowSenseClient` facade for concise embedded Python usage and an
   explicit Airflow data-source factory for application-owned configuration.
 - Added pluggable Airflow authentication providers for Basic Auth, login-token

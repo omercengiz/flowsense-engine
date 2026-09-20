@@ -96,6 +96,20 @@ for dag_id, failure in result.failures.items():
     print(dag_id, failure)
 ```
 
+Batch results have their own versioned external contract. Raw exception objects
+are converted to stable failure records containing `error_type` and `message`:
+
+```python
+from flowsense import serialize_batch_analysis
+
+payload = serialize_batch_analysis(result)
+```
+
+Use `build_batch_analysis_document()` for a typed Pydantic document or
+`batch_analysis_json_schema()` for the corresponding JSON Schema. The current
+batch envelope schema version is `1.0`; each successful analysis retains its
+own analysis schema version.
+
 Concurrency is opt-in and bounded; `max_concurrency` defaults to `1`. Each DAG
 receives its own context-managed data source. Expected `FlowSenseError`
 instances are isolated in `failures`, while unexpected programming or adapter

@@ -55,6 +55,10 @@ analysis logic of its own. Its optional multi-DAG operation creates one
 use-case execution and context-managed data source per DAG, preserving the
 single-DAG application boundary.
 
+`BatchAnalysisDocument` is a separate versioned envelope around the existing
+single-DAG `AnalysisDocument`. Expected failures cross the output boundary as
+typed failure records rather than runtime exception objects.
+
 `DAGAnalysisEngine` is the coarse-grained algorithm extension port. The default
 implementation owns the complete statistical workflow after data collection.
 Alternative engines can be injected into `AnalyzeDAG` without changing CLI,
