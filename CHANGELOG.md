@@ -5,6 +5,25 @@ All notable changes to FlowSense are documented in this file. The project uses
 
 ## [Unreleased]
 
+### Added
+
+- Added the `FlowSenseClient` facade for concise embedded Python usage and an
+  explicit Airflow data-source factory for application-owned configuration.
+- Added pluggable Airflow authentication providers for Basic Auth, login-token
+  exchange, static or rotating bearer tokens, and deployment-specific headers.
+- Added a bounded Prometheus metrics exporter and the optional
+  `flowsense serve-metrics` command for continuous DAG analysis.
+- Added a provisioned Grafana dashboard and local Docker Compose example for
+  inspecting analysis health, coverage, severity, task drift, and handoffs.
+- Added Prometheus alert rules, Alertmanager configuration, synthetic rule
+  tests, and CI validation for FlowSense analysis failures and anomalies.
+
+### Changed
+
+- Kept observability integrations as optional delivery adapters so the core
+  analysis package remains independent from Prometheus, Grafana, and hosted
+  service infrastructure.
+
 ## [0.3.0] - 2026-09-20
 
 ### Added
