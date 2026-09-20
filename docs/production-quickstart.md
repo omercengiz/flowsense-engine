@@ -93,6 +93,10 @@ The command always writes the versioned batch JSON when analysis completes. It
 returns exit code `1` if any DAG has an expected failure, while preserving all
 successful results and failure records in the output file.
 
+Batch analysis accepts the same policy controls as single-DAG analysis,
+including history requirements, severity thresholds, mapped-task aggregation,
+and change-point or trend detector settings.
+
 With `--fail-on`, exit code `2` means at least one successful DAG analysis
 reached the selected severity. Operational DAG failures take precedence and
 retain exit code `1`.
