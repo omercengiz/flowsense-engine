@@ -70,6 +70,15 @@ flowsense doctor
 For automation, `flowsense doctor --output json` emits structured checks and
 returns exit code `1` when a required check fails.
 
+List the active DAGs visible to the configured identity:
+
+```bash
+flowsense dags
+flowsense dags --output json
+```
+
+Paused DAGs are excluded unless `--include-paused` is provided.
+
 Start with a DAG that has several successful historical runs:
 
 ```bash

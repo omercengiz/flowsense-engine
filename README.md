@@ -188,6 +188,7 @@ Then run:
 
 ```bash
 flowsense doctor
+flowsense dags
 flowsense analyze <dag_id>
 ```
 
