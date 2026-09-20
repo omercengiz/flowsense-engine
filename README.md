@@ -251,20 +251,24 @@ tooling, or client code generation.
 
 ## Library API
 
-FlowSense can also be used as a Python library through its supported top-level
-API:
+`FlowSenseClient` is the recommended in-process Python API. The environment
+configured Airflow factory keeps the basic setup concise:
 
 ```python
-from flowsense import AnalysisRequest, AnalyzeDAG
+from flowsense import FlowSenseClient
 from flowsense.infrastructure.airflow import create_airflow_data_source
 
-analysis = AnalyzeDAG(create_airflow_data_source).execute(
-    AnalysisRequest(dag_id="flowsense_demo")
-)
+client = FlowSenseClient(create_airflow_data_source)
+analysis = client.analyze("flowsense_demo")
 
 print(analysis.overall_severity)
 print(analysis.primary_origin)
 ```
+
+Applications that own configuration can combine `AirflowConfig` with
+`create_airflow_data_source_factory`. Typed integrations may continue to call
+`client.execute(AnalysisRequest(...))`. See the complete
+[Python API guide](docs/python-api.md).
 
 Analysis behavior can be customized with an immutable policy:
 
