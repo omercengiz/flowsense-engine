@@ -442,7 +442,32 @@ def test_serve_metrics_forwards_runtime_configuration() -> None:
         port=9200,
         interval_seconds=30.0,
         max_tasks_per_dag=50,
+        policy=ANY,
     )
+
+
+def test_serve_metrics_loads_policy_file(tmp_path: Path) -> None:
+    policy_path = tmp_path / "policy.json"
+    policy_path.write_text(
+        '{"schema_version": "1.0", "minimum_history": 10}',
+        encoding="utf-8",
+    )
+
+    with patch(
+        "flowsense.observability.service.run_metrics_service"
+    ) as run_metrics_service:
+        result = CliRunner().invoke(
+            app,
+            [
+                "serve-metrics",
+                "demo",
+                "--policy-file",
+                str(policy_path),
+            ],
+        )
+
+    assert result.exit_code == 0
+    assert run_metrics_service.call_args.kwargs["policy"].minimum_history == 10
 
 
 def test_analyze_reports_airflow_api_errors() -> None:

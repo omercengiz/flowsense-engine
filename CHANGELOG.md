@@ -23,6 +23,8 @@ All notable changes to FlowSense are documented in this file. The project uses
   `flowsense analyze --output-file`.
 - Added reusable, versioned JSON analysis policies for single and batch CLI
   commands, with explicit command-line overrides and JSON Schema export.
+- Added versioned analysis-policy support to the optional Prometheus metrics
+  command and propagated the selected policy through every collection cycle.
 
 ## [0.4.0] - 2026-09-20
 
