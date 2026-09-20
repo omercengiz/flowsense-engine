@@ -145,6 +145,7 @@ AIRFLOW_USERNAME=your_username
 AIRFLOW_PASSWORD=your_password
 AIRFLOW_API_VERSION=v2
 AIRFLOW_AUTH_MODE=token
+# AIRFLOW_BEARER_TOKEN=your_static_token
 AIRFLOW_CONNECT_TIMEOUT=10
 AIRFLOW_READ_TIMEOUT=10
 AIRFLOW_MAX_RETRIES=2
@@ -156,6 +157,12 @@ Use `AIRFLOW_API_VERSION=v1` with `AIRFLOW_AUTH_MODE=basic` for Airflow 2.x
 Stable REST API deployments. Airflow 3.x uses the `v2` API and typically uses
 token authentication. Authentication still depends on the API auth backend
 configured in the Airflow deployment.
+
+Static bearer tokens can use `AIRFLOW_AUTH_MODE=bearer` with
+`AIRFLOW_BEARER_TOKEN`; username and password are not required in that mode.
+Library integrations may inject a custom `AirflowAuthProvider` for rotating
+tokens, identity-aware proxies, or deployment-specific headers. See
+[docs/authentication.md](docs/authentication.md) for the complete contract.
 
 CI verifies both integrations through versioned Airflow 2 and Airflow 3 REST
 contract fixtures. These boundary tests cover authentication, endpoint routing,
