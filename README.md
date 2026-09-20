@@ -270,6 +270,16 @@ Applications that own configuration can combine `AirflowConfig` with
 `client.execute(AnalysisRequest(...))`. See the complete
 [Python API guide](docs/python-api.md).
 
+Multiple DAGs can be analyzed with bounded, opt-in concurrency. Expected
+FlowSense failures are isolated per DAG:
+
+```python
+result = client.analyze_many(
+    ["orders", "payments", "inventory"],
+    max_concurrency=3,
+)
+```
+
 Analysis behavior can be customized with an immutable policy:
 
 ```python

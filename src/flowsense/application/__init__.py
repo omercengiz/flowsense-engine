@@ -3,6 +3,7 @@ from flowsense.application.analysis_engine import (
     DefaultDAGAnalysisEngine,
 )
 from flowsense.application.analyzer import analyze_dag
+from flowsense.application.batch import BatchAnalysisResult
 from flowsense.application.client import FlowSenseClient
 from flowsense.application.output import ANALYSIS_SCHEMA_VERSION, AnalysisDocument
 from flowsense.application.ports import (
@@ -25,6 +26,7 @@ __all__ = [
     "AnalysisMetricsSink",
     "AnalysisRequest",
     "AnalyzeDAG",
+    "BatchAnalysisResult",
     "DAGAnalysisEngine",
     "DAGDataSource",
     "DAGDataSourceFactory",
