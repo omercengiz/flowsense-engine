@@ -8,4 +8,4 @@ def test_distribution_identity_matches_release() -> None:
         project = tomllib.load(file)["project"]
 
     assert project["name"] == "flowsense-engine"
-    assert project["version"] == "0.3.0"
+    assert project["version"] == "0.4.0"
