@@ -99,6 +99,7 @@ def test_client_analyze_many_preserves_order_and_isolates_expected_failures() ->
 
     result = FlowSenseClient(source_factory).analyze_many(["first", "broken", "last"])
 
+    assert result.requested_dag_ids == ("first", "broken", "last")
     assert list(result.analyses) == ["first", "last"]
     assert list(result.failures) == ["broken"]
     assert result.successful_count == 2

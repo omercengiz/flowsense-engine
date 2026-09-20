@@ -18,6 +18,7 @@ from flowsense.domain import (
 class BatchAnalysisResult:
     """Immutable results and expected failures from a multi-DAG analysis."""
 
+    requested_dag_ids: tuple[str, ...]
     analyses: Mapping[str, DAGAnalysis]
     failures: Mapping[str, FlowSenseError]
 
@@ -95,7 +96,11 @@ class AnalyzeDAGBatch:
             else:
                 analyses[dag_id] = outcome
 
-        return BatchAnalysisResult(analyses=analyses, failures=failures)
+        return BatchAnalysisResult(
+            requested_dag_ids=dag_ids,
+            analyses=analyses,
+            failures=failures,
+        )
 
     @staticmethod
     def _validate_input(

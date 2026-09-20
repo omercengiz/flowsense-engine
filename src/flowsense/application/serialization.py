@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from flowsense.application.batch import BatchAnalysisResult
 from flowsense.application.output import (
     AnalysisDocument,
     AnalysisPolicyOutput,
     AnalysisSummaryOutput,
+    BatchAnalysisDocument,
+    BatchFailureOutput,
     ChangePointOutput,
     DiagnosticOutput,
     DriftOutput,
@@ -175,3 +178,35 @@ def serialize_analysis(analysis: DAGAnalysis) -> dict[str, object]:
 def analysis_json_schema() -> dict[str, object]:
     """Return the JSON Schema for the current analysis output contract."""
     return AnalysisDocument.model_json_schema()
+
+
+def build_batch_analysis_document(
+    result: BatchAnalysisResult,
+) -> BatchAnalysisDocument:
+    """Build and validate the typed public batch output document."""
+    return BatchAnalysisDocument(
+        requested_dag_ids=list(result.requested_dag_ids),
+        successful_count=result.successful_count,
+        failed_count=result.failed_count,
+        analyses={
+            dag_id: build_analysis_document(analysis)
+            for dag_id, analysis in result.analyses.items()
+        },
+        failures={
+            dag_id: BatchFailureOutput(
+                error_type=type(failure).__name__,
+                message=str(failure),
+            )
+            for dag_id, failure in result.failures.items()
+        },
+    )
+
+
+def serialize_batch_analysis(result: BatchAnalysisResult) -> dict[str, object]:
+    """Serialize batch results to the versioned public output schema."""
+    return build_batch_analysis_document(result).model_dump(mode="json")
+
+
+def batch_analysis_json_schema() -> dict[str, object]:
+    """Return the JSON Schema for the current batch output contract."""
+    return BatchAnalysisDocument.model_json_schema()

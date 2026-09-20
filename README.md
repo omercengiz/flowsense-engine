@@ -280,6 +280,9 @@ result = client.analyze_many(
 )
 ```
 
+`serialize_batch_analysis(result)` converts the result into the stable batch
+output contract without exposing raw exception objects.
+
 Analysis behavior can be customized with an immutable policy:
 
 ```python
