@@ -25,6 +25,8 @@ All notable changes to FlowSense are documented in this file. The project uses
   commands, with explicit command-line overrides and JSON Schema export.
 - Added versioned analysis-policy support to the optional Prometheus metrics
   command and propagated the selected policy through every collection cycle.
+- Added a validated per-cycle history limit to the Prometheus metrics command
+  so Airflow collection remains explicitly bounded.
 
 ## [0.4.0] - 2026-09-20
 

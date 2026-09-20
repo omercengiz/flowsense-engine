@@ -379,6 +379,11 @@ def serve_metrics(
             help="Load the versioned JSON policy used for every analysis.",
         ),
     ] = None,
+    history_run_limit: int | None = typer.Option(
+        None,
+        min=2,
+        help="Limit collection to the most recent successful runs per DAG.",
+    ),
 ) -> None:
     """Continuously analyze DAGs and expose Prometheus metrics."""
     from flowsense.observability.service import run_metrics_service
@@ -398,6 +403,7 @@ def serve_metrics(
             interval_seconds=interval_seconds,
             max_tasks_per_dag=max_tasks_per_dag,
             policy=policy,
+            history_run_limit=history_run_limit,
         )
     except KeyboardInterrupt:
         console.print("Metrics service stopped.")

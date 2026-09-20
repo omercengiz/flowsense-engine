@@ -13,6 +13,7 @@ flowsense serve-metrics example_dag another_dag \
   --host 0.0.0.0 \
   --port 9108 \
   --interval-seconds 60 \
+  --history-run-limit 50 \
   --policy-file flowsense-policy.json
 ```
 
