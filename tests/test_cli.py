@@ -202,6 +202,68 @@ def test_analyze_batch_builds_policy_from_options() -> None:
     assert policy.mapped_task_aggregation is MappedTaskAggregation.MEAN
 
 
+def test_analyze_batch_discovers_and_limits_dags() -> None:
+    airflow = MagicMock()
+    airflow.__enter__.return_value = airflow
+    airflow.list_dag_ids.return_value = ["third", "second", "first"]
+    batch = BatchAnalysisResult(
+        requested_dag_ids=("first", "second"),
+        analyses={
+            "first": _analysis_with_severity(Severity.NORMAL),
+            "second": _analysis_with_severity(Severity.NORMAL),
+        },
+        failures={},
+    )
+
+    with (
+        patch("flowsense.cli.main.load_airflow_config"),
+        patch("flowsense.cli.main.AirflowClient", return_value=airflow),
+        patch(
+            "flowsense.cli.main.FlowSenseClient.analyze_many",
+            return_value=batch,
+        ) as analyze_many,
+    ):
+        result = CliRunner().invoke(
+            app,
+            [
+                "analyze-batch",
+                "--all-dags",
+                "--include-paused",
+                "--dag-limit",
+                "2",
+            ],
+        )
+
+    assert result.exit_code == 0
+    airflow.list_dag_ids.assert_called_once_with(include_paused=True)
+    assert analyze_many.call_args.args == (["first", "second"],)
+
+
+def test_analyze_batch_rejects_explicit_and_discovered_dags_together() -> None:
+    result = CliRunner().invoke(
+        app,
+        ["analyze-batch", "demo", "--all-dags"],
+    )
+
+    assert result.exit_code == 1
+    assert "Explicit DAG ids cannot be combined with --all-dags" in result.output
+
+
+def test_analyze_batch_rejects_empty_discovery() -> None:
+    airflow = MagicMock()
+    airflow.__enter__.return_value = airflow
+    airflow.list_dag_ids.return_value = []
+
+    with (
+        patch("flowsense.cli.main.load_airflow_config"),
+        patch("flowsense.cli.main.AirflowClient", return_value=airflow),
+    ):
+        result = CliRunner().invoke(app, ["analyze-batch", "--all-dags"])
+
+    assert result.exit_code == 1
+    assert "No DAGs were discovered for batch analysis" in result.output
+
+
 def test_analyze_batch_writes_partial_result_before_failure_exit(
     tmp_path: Path,
 ) -> None:
