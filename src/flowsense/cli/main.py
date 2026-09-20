@@ -18,9 +18,9 @@ from flowsense.application import (
     serialize_batch_analysis,
 )
 from flowsense.cli.doctor import DiagnosticStatus, run_airflow_diagnostics
+from flowsense.cli.policy import build_analysis_policy
 from flowsense.cli.report import render_analysis
 from flowsense.domain import (
-    AnalysisPolicy,
     ConfigurationError,
     FlowSenseError,
     MappedTaskAggregation,
@@ -260,17 +260,17 @@ def analyze_batch(
             include_paused=include_paused,
             dag_limit=dag_limit,
         )
-        policy = AnalysisPolicy(
+        policy = build_analysis_policy(
             minimum_history=minimum_history,
             baseline_window=baseline_window,
             medium_threshold=medium_threshold,
             high_threshold=high_threshold,
             critical_threshold=critical_threshold,
             mapped_task_aggregation=mapped_task_aggregation,
-            change_point_detection_enabled=change_point_detection,
+            change_point_detection=change_point_detection,
             change_point_minimum_segment_size=change_point_minimum_segment_size,
             change_point_score_threshold=change_point_score_threshold,
-            trend_detection_enabled=trend_detection,
+            trend_detection=trend_detection,
             trend_minimum_observations=trend_minimum_observations,
             trend_score_threshold=trend_score_threshold,
             trend_minimum_directional_consistency=(
@@ -441,17 +441,17 @@ def analyze(
     ),
 ) -> None:
     try:
-        policy = AnalysisPolicy(
+        policy = build_analysis_policy(
             minimum_history=minimum_history,
             baseline_window=baseline_window,
             medium_threshold=medium_threshold,
             high_threshold=high_threshold,
             critical_threshold=critical_threshold,
             mapped_task_aggregation=mapped_task_aggregation,
-            change_point_detection_enabled=change_point_detection,
+            change_point_detection=change_point_detection,
             change_point_minimum_segment_size=change_point_minimum_segment_size,
             change_point_score_threshold=change_point_score_threshold,
-            trend_detection_enabled=trend_detection,
+            trend_detection=trend_detection,
             trend_minimum_observations=trend_minimum_observations,
             trend_score_threshold=trend_score_threshold,
             trend_minimum_directional_consistency=(
