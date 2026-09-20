@@ -382,6 +382,7 @@ Run continuous analysis and expose the latest DAG and bounded task-level metrics
 flowsense serve-metrics example_dag \
   --host 0.0.0.0 \
   --port 9108 \
+  --history-run-limit 50 \
   --policy-file flowsense-policy.json
 ```
 

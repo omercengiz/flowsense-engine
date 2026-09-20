@@ -185,9 +185,29 @@ def test_metrics_service_forwards_analysis_policy() -> None:
         analyze=ANY,
         sink=ANY,
         policy=policy,
+        history_run_limit=None,
     )
     server.shutdown.assert_called_once_with()
     server.server_close.assert_called_once_with()
+
+
+def test_metrics_service_validates_history_limit_before_starting_server() -> None:
+    with (
+        patch("flowsense.observability.service.create_metrics_server") as create_server,
+        pytest.raises(ConfigurationError, match="at least minimum_history"),
+    ):
+        run_metrics_service(
+            ["demo"],
+            source_factory=MagicMock(),
+            host="127.0.0.1",
+            port=9108,
+            interval_seconds=60,
+            max_tasks_per_dag=200,
+            policy=AnalysisPolicy(minimum_history=10),
+            history_run_limit=5,
+        )
+
+    create_server.assert_not_called()
 
 
 @pytest.mark.parametrize("limit", [-1, -100])
