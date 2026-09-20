@@ -31,6 +31,7 @@ def collect_metrics_once(
     analyze: Callable[[AnalysisRequest], DAGAnalysis],
     sink: AnalysisMetricsSink,
     policy: AnalysisPolicy = DEFAULT_ANALYSIS_POLICY,
+    history_run_limit: int | None = None,
     monotonic: Callable[[], float] = time.monotonic,
     clock: Callable[[], float] = time.time,
 ) -> list[str]:
@@ -39,7 +40,13 @@ def collect_metrics_once(
     for dag_id in dag_ids:
         started = monotonic()
         try:
-            analysis = analyze(AnalysisRequest(dag_id=dag_id, policy=policy))
+            analysis = analyze(
+                AnalysisRequest(
+                    dag_id=dag_id,
+                    policy=policy,
+                    history_run_limit=history_run_limit,
+                )
+            )
         except FlowSenseError:
             sink.record_failure(
                 dag_id,
@@ -66,12 +73,19 @@ def run_metrics_service(
     interval_seconds: float,
     max_tasks_per_dag: int,
     policy: AnalysisPolicy = DEFAULT_ANALYSIS_POLICY,
+    history_run_limit: int | None = None,
 ) -> None:
     """Continuously analyze DAGs and expose the latest snapshot over HTTP."""
     if not dag_ids:
         raise ValueError("at least one DAG id is required")
     if interval_seconds <= 0:
         raise ValueError("interval_seconds must be positive")
+    for dag_id in dag_ids:
+        AnalysisRequest(
+            dag_id=dag_id,
+            policy=policy,
+            history_run_limit=history_run_limit,
+        )
 
     exporter = PrometheusExporter(
         max_tasks_per_dag=max_tasks_per_dag,
@@ -88,6 +102,7 @@ def run_metrics_service(
                 analyze=analyze,
                 sink=exporter,
                 policy=policy,
+                history_run_limit=history_run_limit,
             )
             time.sleep(interval_seconds)
     finally:

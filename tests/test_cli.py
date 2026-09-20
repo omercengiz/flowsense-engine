@@ -443,6 +443,7 @@ def test_serve_metrics_forwards_runtime_configuration() -> None:
         interval_seconds=30.0,
         max_tasks_per_dag=50,
         policy=ANY,
+        history_run_limit=None,
     )
 
 
@@ -463,11 +464,14 @@ def test_serve_metrics_loads_policy_file(tmp_path: Path) -> None:
                 "demo",
                 "--policy-file",
                 str(policy_path),
+                "--history-run-limit",
+                "50",
             ],
         )
 
     assert result.exit_code == 0
     assert run_metrics_service.call_args.kwargs["policy"].minimum_history == 10
+    assert run_metrics_service.call_args.kwargs["history_run_limit"] == 50
 
 
 def test_analyze_reports_airflow_api_errors() -> None:
