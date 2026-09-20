@@ -12,7 +12,10 @@ from flowsense.infrastructure.airflow.exceptions import (
     AirflowDagRunNotFoundError,
     AirflowDataError,
 )
-from flowsense.infrastructure.airflow.factory import create_airflow_data_source
+from flowsense.infrastructure.airflow.factory import (
+    create_airflow_data_source,
+    create_airflow_data_source_factory,
+)
 
 __all__ = [
     "AirflowApiError",
@@ -26,5 +29,6 @@ __all__ = [
     "BearerTokenAuthProvider",
     "HeaderAuthProvider",
     "create_airflow_data_source",
+    "create_airflow_data_source_factory",
     "load_airflow_config",
 ]

@@ -64,6 +64,7 @@ def test_top_level_api_declares_supported_exports() -> None:
         "DAGAnalysisSummary",
         "DAGDataSource",
         "DefaultDAGAnalysisEngine",
+        "FlowSenseClient",
         "Severity",
         "MappedTaskAggregation",
         "TaskRun",

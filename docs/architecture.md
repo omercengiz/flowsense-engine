@@ -48,6 +48,11 @@ implemented by infrastructure adapters. The existing functional
 `analyze_dag(dag_id, source, policy)` API remains available for callers that
 already own a data source.
 
+`FlowSenseClient` is the supported convenience facade for embedded Python
+consumers. It translates the concise `analyze(...)` call into an
+`AnalysisRequest` and delegates to `AnalyzeDAG`; it contains no collection or
+analysis logic of its own.
+
 `DAGAnalysisEngine` is the coarse-grained algorithm extension port. The default
 implementation owns the complete statistical workflow after data collection.
 Alternative engines can be injected into `AnalyzeDAG` without changing CLI,
