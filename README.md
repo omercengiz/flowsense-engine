@@ -205,7 +205,11 @@ For automation and CI/CD integrations, request the versioned JSON document:
 
 ```bash
 flowsense analyze <dag_id> --output json
+flowsense analyze <dag_id> --output-file flowsense-analysis.json
 ```
+
+`--output-file` always writes the versioned JSON contract and avoids relying on
+shell redirection in CI jobs.
 
 CI jobs can also fail when the analysis reaches a selected severity:
 
