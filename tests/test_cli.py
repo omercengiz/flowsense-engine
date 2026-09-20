@@ -187,6 +187,60 @@ def test_analyze_batch_writes_partial_result_before_failure_exit(
     assert document["failures"]["broken"]["error_type"] == "ConfigurationError"
 
 
+def test_analyze_batch_exits_with_threshold_code_after_writing_json(
+    tmp_path: Path,
+) -> None:
+    batch = BatchAnalysisResult(
+        requested_dag_ids=("normal", "critical"),
+        analyses={
+            "normal": _analysis_with_severity(Severity.NORMAL),
+            "critical": _analysis_with_severity(Severity.CRITICAL),
+        },
+        failures={},
+    )
+    output_path = tmp_path / "batch.json"
+
+    with patch(
+        "flowsense.cli.main.FlowSenseClient.analyze_many",
+        return_value=batch,
+    ):
+        result = CliRunner().invoke(
+            app,
+            [
+                "analyze-batch",
+                "normal",
+                "critical",
+                "--fail-on",
+                "high",
+                "--output-file",
+                str(output_path),
+            ],
+        )
+
+    assert result.exit_code == 2
+    assert json.loads(output_path.read_text(encoding="utf-8"))["failed_count"] == 0
+
+
+def test_analyze_batch_prioritizes_operational_failure_exit_code() -> None:
+    batch = BatchAnalysisResult(
+        requested_dag_ids=("critical", "broken"),
+        analyses={"critical": _analysis_with_severity(Severity.CRITICAL)},
+        failures={"broken": ConfigurationError("invalid configuration")},
+    )
+
+    with patch(
+        "flowsense.cli.main.FlowSenseClient.analyze_many",
+        return_value=batch,
+    ):
+        result = CliRunner().invoke(
+            app,
+            ["analyze-batch", "critical", "broken", "--fail-on", "medium"],
+        )
+
+    assert result.exit_code == 1
+    assert json.loads(result.output)["failed_count"] == 1
+
+
 def test_serve_metrics_forwards_runtime_configuration() -> None:
     with patch(
         "flowsense.observability.service.run_metrics_service"

@@ -85,12 +85,17 @@ Analyze an explicit, bounded DAG set directly from the CLI:
 flowsense analyze-batch orders payments inventory \
   --history-run-limit 50 \
   --max-concurrency 3 \
+  --fail-on high \
   --output-file flowsense-batch.json
 ```
 
 The command always writes the versioned batch JSON when analysis completes. It
 returns exit code `1` if any DAG has an expected failure, while preserving all
 successful results and failure records in the output file.
+
+With `--fail-on`, exit code `2` means at least one successful DAG analysis
+reached the selected severity. Operational DAG failures take precedence and
+retain exit code `1`.
 
 Start with a DAG that has several successful historical runs:
 
