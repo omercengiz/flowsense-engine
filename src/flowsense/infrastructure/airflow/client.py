@@ -10,6 +10,11 @@ import httpx
 from pydantic import ValidationError
 
 from flowsense.domain import ConfigurationError, TaskRun
+from flowsense.infrastructure.airflow.auth import (
+    AirflowAuthProvider,
+    BasicAuthProvider,
+    BearerTokenAuthProvider,
+)
 from flowsense.infrastructure.airflow.config import AirflowConfig
 from flowsense.infrastructure.airflow.dto import (
     AirflowDagRunDTO,
@@ -28,7 +33,7 @@ from flowsense.infrastructure.airflow.mapper import (
 
 PAGE_SIZE = 100
 AirflowApiVersion = Literal["v1", "v2"]
-AirflowAuthMode = Literal["basic", "token"]
+AirflowAuthMode = Literal["basic", "token", "bearer"]
 RETRYABLE_STATUS_CODES = frozenset({429, 502, 503, 504})
 
 
@@ -41,10 +46,11 @@ class AirflowClient:
         target_dag_run_id: str | None = None,
         http_client: httpx.Client | None = None,
         sleep: Callable[[float], None] | None = None,
+        auth_provider: AirflowAuthProvider | None = None,
     ):
         self.base_url = config.base_url.rstrip("/")
-        self.username = config.username
-        self.password = config.password
+        self._username = config.username
+        self._password = config.password
         self.api_version = config.api_version
         self.auth_mode = config.auth_mode
         self.connect_timeout = config.connect_timeout
@@ -61,8 +67,8 @@ class AirflowClient:
         if self.api_version not in {"v1", "v2"}:
             raise ConfigurationError("api_version must be 'v1' or 'v2'")
 
-        if self.auth_mode not in {"basic", "token"}:
-            raise ConfigurationError("auth_mode must be 'basic' or 'token'")
+        if auth_provider is None and self.auth_mode not in {"basic", "token", "bearer"}:
+            raise ConfigurationError("auth_mode must be 'basic', 'token', or 'bearer'")
         if self.connect_timeout <= 0:
             raise ConfigurationError("connect_timeout must be positive")
         if self.read_timeout <= 0:
@@ -87,6 +93,7 @@ class AirflowClient:
         )
         self._sleep = sleep or time.sleep
         self._token: str | None = None
+        self._auth_provider = auth_provider or self._create_auth_provider(config)
 
     def __enter__(self) -> Self:
         return self
@@ -172,8 +179,8 @@ class AirflowClient:
             method="POST",
             url=f"{self.base_url}/auth/token",
             json={
-                "username": self.username,
-                "password": self.password,
+                "username": self._username,
+                "password": self._password,
             },
         )
 
@@ -199,19 +206,19 @@ class AirflowClient:
 
         return payload
 
-    def _headers(self) -> dict[str, str]:
-        headers = {"Accept": "application/json"}
-
-        if self.auth_mode == "token":
-            headers["Authorization"] = f"Bearer {self._get_token()}"
-
-        return headers
-
-    def _authentication(self) -> httpx.BasicAuth | None:
+    def _create_auth_provider(self, config: AirflowConfig) -> AirflowAuthProvider:
         if self.auth_mode == "basic":
-            return httpx.BasicAuth(self.username, self.password)
-
-        return None
+            return BasicAuthProvider(
+                _required(config.username, "username"),
+                _required(config.password, "password"),
+            )
+        if self.auth_mode == "bearer":
+            return BearerTokenAuthProvider(
+                _required(config.bearer_token, "bearer_token")
+            )
+        _required(config.username, "username")
+        _required(config.password, "password")
+        return BearerTokenAuthProvider(self._get_token)
 
     def _api_url(self, path: str) -> str:
         return f"{self.base_url}/api/{self.api_version}{path}"
@@ -226,13 +233,13 @@ class AirflowClient:
         last_page: dict = {}
 
         while True:
+            request_auth = self._auth_provider.request_auth()
             request_kwargs: dict[str, object] = {
-                "headers": self._headers(),
+                "headers": {"Accept": "application/json", **request_auth.headers},
                 "params": {"limit": PAGE_SIZE, "offset": offset},
             }
-            authentication = self._authentication()
-            if authentication is not None:
-                request_kwargs["auth"] = authentication
+            if request_auth.auth is not None:
+                request_kwargs["auth"] = request_auth.auth
 
             response = self._request(
                 method="GET",
@@ -354,3 +361,9 @@ class AirflowClient:
         except ValidationError as exc:
             raise AirflowDataError("DAG task") from exc
         return map_dependencies(tasks)
+
+
+def _required(value: str | None, name: str) -> str:
+    if not value:
+        raise ConfigurationError(f"{name} is required for configured authentication")
+    return value
