@@ -177,6 +177,32 @@ def analyze_batch(
         min=1,
         help="Maximum number of concurrent DAG analyses.",
     ),
+    minimum_history: int = typer.Option(5, min=2),
+    baseline_window: int | None = typer.Option(None, min=1),
+    medium_threshold: float = typer.Option(2.0, min=0.0),
+    high_threshold: float = typer.Option(3.5, min=0.0),
+    critical_threshold: float = typer.Option(5.0, min=0.0),
+    change_point_detection: bool = typer.Option(
+        True,
+        "--change-point-detection/--no-change-point-detection",
+    ),
+    change_point_minimum_segment_size: int = typer.Option(3, min=2),
+    change_point_score_threshold: float = typer.Option(3.5, min=0.0),
+    trend_detection: bool = typer.Option(
+        True,
+        "--trend-detection/--no-trend-detection",
+    ),
+    trend_minimum_observations: int = typer.Option(5, min=3),
+    trend_score_threshold: float = typer.Option(3.5, min=0.0),
+    trend_minimum_directional_consistency: float = typer.Option(
+        0.6,
+        min=0.0,
+        max=1.0,
+    ),
+    mapped_task_aggregation: Annotated[
+        MappedTaskAggregation,
+        typer.Option(),
+    ] = MappedTaskAggregation.MAX,
     fail_on: Annotated[
         FailureThreshold | None,
         typer.Option(
@@ -194,8 +220,26 @@ def analyze_batch(
 ) -> None:
     """Analyze multiple explicit DAG ids and emit versioned batch JSON."""
     try:
+        policy = AnalysisPolicy(
+            minimum_history=minimum_history,
+            baseline_window=baseline_window,
+            medium_threshold=medium_threshold,
+            high_threshold=high_threshold,
+            critical_threshold=critical_threshold,
+            mapped_task_aggregation=mapped_task_aggregation,
+            change_point_detection_enabled=change_point_detection,
+            change_point_minimum_segment_size=change_point_minimum_segment_size,
+            change_point_score_threshold=change_point_score_threshold,
+            trend_detection_enabled=trend_detection,
+            trend_minimum_observations=trend_minimum_observations,
+            trend_score_threshold=trend_score_threshold,
+            trend_minimum_directional_consistency=(
+                trend_minimum_directional_consistency
+            ),
+        )
         result = FlowSenseClient(create_airflow_data_source).analyze_many(
             dag_ids,
+            policy=policy,
             history_run_limit=history_run_limit,
             max_concurrency=max_concurrency,
         )
