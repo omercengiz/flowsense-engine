@@ -13,12 +13,13 @@ from flowsense.application import (
     AnalyzeDAG,
     FlowSenseClient,
     analysis_json_schema,
+    analysis_policy_json_schema,
     batch_analysis_json_schema,
     serialize_analysis,
     serialize_batch_analysis,
 )
 from flowsense.cli.doctor import DiagnosticStatus, run_airflow_diagnostics
-from flowsense.cli.policy import build_analysis_policy
+from flowsense.cli.policy import resolve_analysis_policy
 from flowsense.cli.report import render_analysis
 from flowsense.domain import (
     ConfigurationError,
@@ -65,6 +66,7 @@ class FailureThreshold(StrEnum):
 class SchemaDocument(StrEnum):
     ANALYSIS = "analysis"
     BATCH = "batch"
+    POLICY = "policy"
 
 
 @app.callback()
@@ -93,11 +95,12 @@ def show_schema(
     ] = SchemaDocument.ANALYSIS,
 ) -> None:
     """Print a versioned FlowSense output JSON Schema."""
-    schema = (
-        batch_analysis_json_schema()
-        if document is SchemaDocument.BATCH
-        else analysis_json_schema()
-    )
+    schemas = {
+        SchemaDocument.ANALYSIS: analysis_json_schema,
+        SchemaDocument.BATCH: batch_analysis_json_schema,
+        SchemaDocument.POLICY: analysis_policy_json_schema,
+    }
+    schema = schemas[document]()
     typer.echo(
         json.dumps(
             schema,
@@ -183,6 +186,7 @@ def list_dags(
 
 @app.command("analyze-batch")
 def analyze_batch(
+    context: typer.Context,
     dag_ids: Annotated[
         list[str] | None,
         typer.Argument(help="Explicit Airflow DAG ids to analyze."),
@@ -201,6 +205,13 @@ def analyze_batch(
         min=1,
         help="Maximum number of discovered DAGs to analyze with --all-dags.",
     ),
+    policy_file: Annotated[
+        Path | None,
+        typer.Option(
+            "--policy-file",
+            help="Load a versioned JSON policy; explicit CLI options override it.",
+        ),
+    ] = None,
     history_run_limit: int | None = typer.Option(
         None,
         min=2,
@@ -260,7 +271,9 @@ def analyze_batch(
             include_paused=include_paused,
             dag_limit=dag_limit,
         )
-        policy = build_analysis_policy(
+        policy = resolve_analysis_policy(
+            context,
+            policy_file,
             minimum_history=minimum_history,
             baseline_window=baseline_window,
             medium_threshold=medium_threshold,
@@ -381,10 +394,18 @@ def serve_metrics(
 
 @app.command()
 def analyze(
+    context: typer.Context,
     dag_id: str = typer.Argument(
         ...,
         help="Airflow DAG id to analyze.",
     ),
+    policy_file: Annotated[
+        Path | None,
+        typer.Option(
+            "--policy-file",
+            help="Load a versioned JSON policy; explicit CLI options override it.",
+        ),
+    ] = None,
     minimum_history: int = typer.Option(5, min=2),
     baseline_window: int | None = typer.Option(None, min=1),
     medium_threshold: float = typer.Option(2.0, min=0.0),
@@ -441,7 +462,9 @@ def analyze(
     ),
 ) -> None:
     try:
-        policy = build_analysis_policy(
+        policy = resolve_analysis_policy(
+            context,
+            policy_file,
             minimum_history=minimum_history,
             baseline_window=baseline_window,
             medium_threshold=medium_threshold,
