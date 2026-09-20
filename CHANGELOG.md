@@ -5,6 +5,10 @@ All notable changes to FlowSense are documented in this file. The project uses
 
 ## [Unreleased]
 
+### Added
+
+- Added a production quickstart and executable bounded batch-analysis example.
+
 ## [0.4.0] - 2026-09-20
 
 ### Added
