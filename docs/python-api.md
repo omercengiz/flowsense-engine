@@ -76,6 +76,34 @@ Both `analyze()` and `execute()` return the domain-level `DAGAnalysis` model.
 Use `serialize_analysis()` or `build_analysis_document()` when a versioned
 external output contract is required.
 
+## Analyze multiple DAGs
+
+`analyze_many()` is intended for applications that monitor several DAGs in one
+process. It preserves the requested DAG order and separates successful analyses
+from expected FlowSense failures:
+
+```python
+result = client.analyze_many(
+    ["orders", "payments", "inventory"],
+    history_run_limit=50,
+    max_concurrency=3,
+)
+
+for dag_id, analysis in result.analyses.items():
+    print(dag_id, analysis.overall_severity)
+
+for dag_id, failure in result.failures.items():
+    print(dag_id, failure)
+```
+
+Concurrency is opt-in and bounded; `max_concurrency` defaults to `1`. Each DAG
+receives its own context-managed data source. Expected `FlowSenseError`
+instances are isolated in `failures`, while unexpected programming or adapter
+errors still propagate to the caller. Use individual `AnalysisRequest` objects
+when each DAG needs a different policy or historical run id. When concurrency
+is greater than one, custom data-source factories and injected analysis engines
+must be safe to call from multiple threads.
+
 ## Custom data sources and engines
 
 `FlowSenseClient` depends on the `DAGDataSourceFactory` and
