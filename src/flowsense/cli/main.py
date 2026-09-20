@@ -19,9 +19,10 @@ from flowsense.application import (
     serialize_batch_analysis,
 )
 from flowsense.cli.doctor import DiagnosticStatus, run_airflow_diagnostics
-from flowsense.cli.policy import resolve_analysis_policy
+from flowsense.cli.policy import load_analysis_policy, resolve_analysis_policy
 from flowsense.cli.report import render_analysis
 from flowsense.domain import (
+    DEFAULT_ANALYSIS_POLICY,
     ConfigurationError,
     FlowSenseError,
     MappedTaskAggregation,
@@ -371,12 +372,24 @@ def serve_metrics(
         min=0,
         help="Maximum task IDs included in task-level metrics per DAG.",
     ),
+    policy_file: Annotated[
+        Path | None,
+        typer.Option(
+            "--policy-file",
+            help="Load the versioned JSON policy used for every analysis.",
+        ),
+    ] = None,
 ) -> None:
     """Continuously analyze DAGs and expose Prometheus metrics."""
     from flowsense.observability.service import run_metrics_service
 
-    console.print(f"Serving metrics at http://{host}:{port}/metrics")
     try:
+        policy = (
+            load_analysis_policy(policy_file)
+            if policy_file is not None
+            else DEFAULT_ANALYSIS_POLICY
+        )
+        console.print(f"Serving metrics at http://{host}:{port}/metrics")
         run_metrics_service(
             dag_ids,
             source_factory=create_airflow_data_source,
@@ -384,6 +397,7 @@ def serve_metrics(
             port=port,
             interval_seconds=interval_seconds,
             max_tasks_per_dag=max_tasks_per_dag,
+            policy=policy,
         )
     except KeyboardInterrupt:
         console.print("Metrics service stopped.")

@@ -1,18 +1,25 @@
 from __future__ import annotations
 
 import threading
+from unittest.mock import ANY, MagicMock, patch
 from urllib.request import urlopen
 
 import pytest
 
-from flowsense import ConfigurationError, DAGAnalysis, DriftResult, Severity
+from flowsense import (
+    AnalysisPolicy,
+    ConfigurationError,
+    DAGAnalysis,
+    DriftResult,
+    Severity,
+)
 from flowsense.application import AnalysisRequest
 from flowsense.observability.prometheus import (
     CONTENT_TYPE,
     PrometheusExporter,
     create_metrics_server,
 )
-from flowsense.observability.service import collect_metrics_once
+from flowsense.observability.service import collect_metrics_once, run_metrics_service
 
 
 def _analysis(dag_id: str = "demo") -> DAGAnalysis:
@@ -144,6 +151,43 @@ def test_collection_isolates_expected_failures_per_dag() -> None:
     assert failed == ["broken"]
     assert sink.successes == ["healthy"]
     assert sink.failures == ["broken"]
+
+
+def test_metrics_service_forwards_analysis_policy() -> None:
+    server = MagicMock()
+    policy = AnalysisPolicy(minimum_history=10)
+
+    with (
+        patch(
+            "flowsense.observability.service.create_metrics_server",
+            return_value=server,
+        ),
+        patch("flowsense.observability.service.AnalyzeDAG"),
+        patch("flowsense.observability.service.collect_metrics_once") as collect,
+        patch(
+            "flowsense.observability.service.time.sleep",
+            side_effect=KeyboardInterrupt,
+        ),
+        pytest.raises(KeyboardInterrupt),
+    ):
+        run_metrics_service(
+            ["demo"],
+            source_factory=MagicMock(),
+            host="127.0.0.1",
+            port=9108,
+            interval_seconds=60,
+            max_tasks_per_dag=200,
+            policy=policy,
+        )
+
+    collect.assert_called_once_with(
+        ["demo"],
+        analyze=ANY,
+        sink=ANY,
+        policy=policy,
+    )
+    server.shutdown.assert_called_once_with()
+    server.server_close.assert_called_once_with()
 
 
 @pytest.mark.parametrize("limit", [-1, -100])

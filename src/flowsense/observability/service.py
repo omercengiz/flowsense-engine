@@ -65,6 +65,7 @@ def run_metrics_service(
     port: int,
     interval_seconds: float,
     max_tasks_per_dag: int,
+    policy: AnalysisPolicy = DEFAULT_ANALYSIS_POLICY,
 ) -> None:
     """Continuously analyze DAGs and expose the latest snapshot over HTTP."""
     if not dag_ids:
@@ -82,7 +83,12 @@ def run_metrics_service(
 
     try:
         while True:
-            collect_metrics_once(dag_ids, analyze=analyze, sink=exporter)
+            collect_metrics_once(
+                dag_ids,
+                analyze=analyze,
+                sink=exporter,
+                policy=policy,
+            )
             time.sleep(interval_seconds)
     finally:
         server.shutdown()

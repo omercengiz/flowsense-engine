@@ -11,8 +11,12 @@ Start the service:
 flowsense serve-metrics example_dag another_dag \
   --host 0.0.0.0 \
   --port 9108 \
-  --interval-seconds 60
+  --interval-seconds 60 \
+  --policy-file flowsense-policy.json
 ```
+
+`--policy-file` is optional. When supplied, every collection cycle uses the
+same validated, versioned analysis policy as the single and batch CLI commands.
 
 The command uses the same `AIRFLOW_*` configuration as `flowsense analyze`.
 Configure Prometheus to scrape `http://<flowsense-host>:9108/metrics`.

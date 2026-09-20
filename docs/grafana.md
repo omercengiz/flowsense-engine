@@ -12,8 +12,11 @@ Configure the required `AIRFLOW_*` environment variables, then run:
 flowsense serve-metrics example_dag another_dag \
   --host 0.0.0.0 \
   --port 9108 \
-  --interval-seconds 60
+  --interval-seconds 60 \
+  --policy-file flowsense-policy.json
 ```
+
+Omit `--policy-file` to use the default analysis policy.
 
 Binding to `0.0.0.0` makes the endpoint reachable from the local Prometheus
 container. Do not expose this port to untrusted networks without an appropriate
