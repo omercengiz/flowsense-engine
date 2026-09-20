@@ -1,9 +1,11 @@
 from flowsense.application import (
+    ANALYSIS_POLICY_SCHEMA_VERSION,
     ANALYSIS_SCHEMA_VERSION,
     BATCH_ANALYSIS_SCHEMA_VERSION,
     DEFAULT_DAG_ANALYSIS_ENGINE,
     AnalysisDocument,
     AnalysisMetricsSink,
+    AnalysisPolicyDocument,
     AnalysisRequest,
     AnalyzeDAG,
     BatchAnalysisDocument,
@@ -13,6 +15,7 @@ from flowsense.application import (
     DefaultDAGAnalysisEngine,
     FlowSenseClient,
     analysis_json_schema,
+    analysis_policy_json_schema,
     analyze_dag,
     batch_analysis_json_schema,
     build_analysis_document,
@@ -53,6 +56,7 @@ from flowsense.infrastructure.airflow import (
 from flowsense.version import __version__
 
 __all__ = [
+    "ANALYSIS_POLICY_SCHEMA_VERSION",
     "ANALYSIS_SCHEMA_VERSION",
     "BATCH_ANALYSIS_SCHEMA_VERSION",
     "DEFAULT_ANALYSIS_POLICY",
@@ -65,6 +69,7 @@ __all__ = [
     "AnalysisDocument",
     "AnalysisMetricsSink",
     "AnalysisPolicy",
+    "AnalysisPolicyDocument",
     "AnalysisRequest",
     "AnalyzeDAG",
     "BatchAnalysisDocument",
@@ -94,6 +99,7 @@ __all__ = [
     "TrendResult",
     "__version__",
     "analysis_json_schema",
+    "analysis_policy_json_schema",
     "analyze_dag",
     "batch_analysis_json_schema",
     "build_analysis_document",

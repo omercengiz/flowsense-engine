@@ -217,6 +217,18 @@ CI jobs can also fail when the analysis reaches a selected severity:
 flowsense analyze <dag_id> --output json --fail-on high
 ```
 
+Store reusable analysis settings in a versioned JSON policy file and share it
+between single and batch analysis:
+
+```bash
+flowsense analyze <dag_id> --policy-file flowsense-policy.json
+flowsense analyze-batch --all-dags --dag-limit 10 \
+  --policy-file flowsense-policy.json
+```
+
+Explicit policy options override values loaded from the file. Generate its JSON
+Schema with `flowsense schema --document policy`.
+
 `--fail-on` accepts `medium`, `high`, or `critical`. The report is always
 written before FlowSense exits: code `0` means the severity is below the
 threshold, code `2` means the threshold was reached, and code `1` remains

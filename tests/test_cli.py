@@ -5,6 +5,7 @@ from unittest.mock import ANY, MagicMock, patch
 from typer.testing import CliRunner
 
 from flowsense import (
+    ANALYSIS_POLICY_SCHEMA_VERSION,
     ANALYSIS_SCHEMA_VERSION,
     BATCH_ANALYSIS_SCHEMA_VERSION,
     BatchAnalysisResult,
@@ -60,6 +61,17 @@ def test_schema_outputs_batch_contract_without_airflow() -> None:
     assert "analyses" in schema["properties"]
     assert "failures" in schema["properties"]
     source_factory.assert_not_called()
+
+
+def test_schema_outputs_analysis_policy_contract() -> None:
+    result = CliRunner().invoke(app, ["schema", "--document", "policy"])
+
+    assert result.exit_code == 0
+    schema = json.loads(result.output)
+    assert schema["properties"]["schema_version"]["const"] == (
+        ANALYSIS_POLICY_SCHEMA_VERSION
+    )
+    assert schema["title"] == "AnalysisPolicyDocument"
 
 
 def test_doctor_outputs_json_and_succeeds() -> None:
@@ -215,6 +227,41 @@ def test_analyze_batch_builds_policy_from_options() -> None:
     assert policy.critical_threshold == 6.0
     assert policy.change_point_detection_enabled is False
     assert policy.trend_detection_enabled is False
+    assert policy.mapped_task_aggregation is MappedTaskAggregation.MEAN
+
+
+def test_analyze_batch_loads_policy_file(tmp_path: Path) -> None:
+    policy_path = tmp_path / "policy.json"
+    policy_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "minimum_history": 10,
+                "baseline_window": 20,
+                "mapped_task_aggregation": "MEAN",
+            }
+        ),
+        encoding="utf-8",
+    )
+    batch = BatchAnalysisResult(
+        requested_dag_ids=("demo",),
+        analyses={"demo": _analysis_with_severity(Severity.NORMAL)},
+        failures={},
+    )
+
+    with patch(
+        "flowsense.cli.main.FlowSenseClient.analyze_many",
+        return_value=batch,
+    ) as analyze_many:
+        result = CliRunner().invoke(
+            app,
+            ["analyze-batch", "demo", "--policy-file", str(policy_path)],
+        )
+
+    assert result.exit_code == 0
+    policy = analyze_many.call_args.kwargs["policy"]
+    assert policy.minimum_history == 10
+    assert policy.baseline_window == 20
     assert policy.mapped_task_aggregation is MappedTaskAggregation.MEAN
 
 
@@ -466,6 +513,65 @@ def test_analyze_builds_structural_analysis_policy_from_options() -> None:
     assert policy.trend_minimum_observations == 8
     assert policy.trend_score_threshold == 4.5
     assert policy.trend_minimum_directional_consistency == 0.75
+
+
+def test_analyze_explicit_option_overrides_policy_file(tmp_path: Path) -> None:
+    policy_path = tmp_path / "policy.json"
+    policy_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "minimum_history": 10,
+                "baseline_window": 20,
+                "trend_detection": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    analysis = _analysis_with_severity(Severity.NORMAL)
+
+    with (
+        patch("flowsense.cli.main.create_airflow_data_source"),
+        patch(
+            "flowsense.cli.main.AnalyzeDAG.execute", return_value=analysis
+        ) as execute,
+        patch("flowsense.cli.main.render_analysis"),
+    ):
+        result = CliRunner().invoke(
+            app,
+            [
+                "analyze",
+                "demo",
+                "--policy-file",
+                str(policy_path),
+                "--minimum-history",
+                "8",
+            ],
+        )
+
+    assert result.exit_code == 0
+    policy = execute.call_args.args[0].policy
+    assert policy.minimum_history == 8
+    assert policy.baseline_window == 20
+    assert policy.trend_detection_enabled is False
+
+
+def test_analyze_rejects_invalid_policy_file_before_airflow(tmp_path: Path) -> None:
+    policy_path = tmp_path / "policy.json"
+    policy_path.write_text(
+        '{"schema_version": "2.0", "unknown_setting": true}',
+        encoding="utf-8",
+    )
+
+    with patch("flowsense.cli.main.create_airflow_data_source") as source_factory:
+        result = CliRunner().invoke(
+            app,
+            ["analyze", "demo", "--policy-file", str(policy_path)],
+        )
+
+    assert result.exit_code == 2
+    assert "Invalid analysis policy file" in result.output
+    source_factory.assert_not_called()
 
 
 def test_analyze_outputs_versioned_json() -> None:

@@ -97,6 +97,34 @@ Batch analysis accepts the same policy controls as single-DAG analysis,
 including history requirements, severity thresholds, mapped-task aggregation,
 and change-point or trend detector settings.
 
+For repeatable analysis across environments, create `flowsense-policy.json`:
+
+```json
+{
+  "schema_version": "1.0",
+  "minimum_history": 10,
+  "baseline_window": 30,
+  "medium_threshold": 2.0,
+  "high_threshold": 3.5,
+  "critical_threshold": 5.0,
+  "mapped_task_aggregation": "MAX"
+}
+```
+
+Use the same file with either command:
+
+```bash
+flowsense analyze orders --policy-file flowsense-policy.json
+flowsense analyze-batch orders payments \
+  --policy-file flowsense-policy.json \
+  --minimum-history 15
+```
+
+Explicit CLI policy options override file values. Unknown fields, unsupported
+schema versions, malformed JSON, and invalid domain settings fail before an
+Airflow analysis begins. Export the policy schema with
+`flowsense schema --document policy`.
+
 To discover active DAGs automatically, keep the workload explicitly bounded:
 
 ```bash
