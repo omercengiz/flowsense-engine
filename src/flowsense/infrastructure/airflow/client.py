@@ -17,6 +17,7 @@ from flowsense.infrastructure.airflow.auth import (
 )
 from flowsense.infrastructure.airflow.config import AirflowConfig
 from flowsense.infrastructure.airflow.dto import (
+    AirflowDagDTO,
     AirflowDagRunDTO,
     AirflowTaskDTO,
     AirflowTaskInstanceDTO,
@@ -278,6 +279,23 @@ class AirflowClient:
             url=self._api_url(f"/dags/{dag_id}/dagRuns"),
             collection_key="dag_runs",
         )
+
+    def get_dags(self) -> dict:
+        """Return all DAG records from the configured Airflow API."""
+        return self._get_paginated(
+            url=self._api_url("/dags"),
+            collection_key="dags",
+        )
+
+    def list_dag_ids(self, *, include_paused: bool = False) -> list[str]:
+        """Discover DAG ids, excluding paused DAGs unless explicitly requested."""
+        response = self.get_dags()
+        try:
+            dags = [AirflowDagDTO.model_validate(item) for item in response["dags"]]
+        except ValidationError as exc:
+            raise AirflowDataError("DAG") from exc
+
+        return [dag.dag_id for dag in dags if include_paused or not dag.is_paused]
 
     def get_task_instances(
         self,

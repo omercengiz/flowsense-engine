@@ -7,6 +7,7 @@ from flowsense import ConfigurationError
 from flowsense.infrastructure.airflow import (
     AirflowClient,
     AirflowConfig,
+    AirflowDataError,
     load_airflow_config,
 )
 from flowsense.infrastructure.airflow.dto import (
@@ -120,6 +121,42 @@ def test_uses_configured_stable_api_version(api_version: str) -> None:
     assert http_client.request.call_args.kwargs["url"] == (
         f"http://airflow.test/api/{api_version}/dags/demo/dagRuns"
     )
+
+
+@pytest.mark.parametrize("api_version", ["v1", "v2"])
+def test_discovers_dags_through_configured_api_version(api_version: str) -> None:
+    http_client = MagicMock(spec=httpx.Client)
+    response = MagicMock()
+    response.json.return_value = {
+        "dags": [
+            {"dag_id": "active", "is_paused": False},
+            {"dag_id": "paused", "is_paused": True},
+        ],
+        "total_entries": 2,
+    }
+    http_client.request.return_value = response
+    client = _client(http_client, api_version=api_version, auth_mode="basic")
+
+    assert client.list_dag_ids() == ["active"]
+    assert client.list_dag_ids(include_paused=True) == ["active", "paused"]
+    assert all(
+        call.kwargs["url"] == f"http://airflow.test/api/{api_version}/dags"
+        for call in http_client.request.call_args_list
+    )
+
+
+def test_validates_discovered_dag_payload() -> None:
+    http_client = MagicMock(spec=httpx.Client)
+    response = MagicMock()
+    response.json.return_value = {
+        "dags": [{"is_paused": False}],
+        "total_entries": 1,
+    }
+    http_client.request.return_value = response
+    client = _client(http_client, api_version="v2", auth_mode="basic")
+
+    with pytest.raises(AirflowDataError, match="DAG"):
+        client.list_dag_ids()
 
 
 def test_uses_basic_auth_for_airflow_2_api() -> None:
