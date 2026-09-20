@@ -97,9 +97,7 @@ def test_client_analyze_many_preserves_order_and_isolates_expected_failures() ->
         source.get_dag_dependencies.return_value = {}
         yield source
 
-    result = FlowSenseClient(source_factory).analyze_many(
-        ["first", "broken", "last"]
-    )
+    result = FlowSenseClient(source_factory).analyze_many(["first", "broken", "last"])
 
     assert list(result.analyses) == ["first", "last"]
     assert list(result.failures) == ["broken"]
