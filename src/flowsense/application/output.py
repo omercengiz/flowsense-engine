@@ -11,6 +11,7 @@ from flowsense.domain import (
 )
 
 ANALYSIS_SCHEMA_VERSION = "1.1"
+BATCH_ANALYSIS_SCHEMA_VERSION = "1.0"
 
 
 class OutputModel(BaseModel):
@@ -126,3 +127,19 @@ class AnalysisDocument(OutputModel):
     propagation_results: list[PropagationOutput]
     dependencies: dict[str, list[str]]
     diagnostics: list[DiagnosticOutput]
+
+
+class BatchFailureOutput(OutputModel):
+    error_type: str
+    message: str
+
+
+class BatchAnalysisDocument(OutputModel):
+    """Typed representation of the FlowSense batch output schema."""
+
+    schema_version: Literal["1.0"] = BATCH_ANALYSIS_SCHEMA_VERSION
+    requested_dag_ids: list[str]
+    successful_count: int
+    failed_count: int
+    analyses: dict[str, AnalysisDocument]
+    failures: dict[str, BatchFailureOutput]

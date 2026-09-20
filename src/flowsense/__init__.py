@@ -1,10 +1,12 @@
 from flowsense.application import (
     ANALYSIS_SCHEMA_VERSION,
+    BATCH_ANALYSIS_SCHEMA_VERSION,
     DEFAULT_DAG_ANALYSIS_ENGINE,
     AnalysisDocument,
     AnalysisMetricsSink,
     AnalysisRequest,
     AnalyzeDAG,
+    BatchAnalysisDocument,
     BatchAnalysisResult,
     DAGAnalysisEngine,
     DAGDataSource,
@@ -12,8 +14,11 @@ from flowsense.application import (
     FlowSenseClient,
     analysis_json_schema,
     analyze_dag,
+    batch_analysis_json_schema,
     build_analysis_document,
+    build_batch_analysis_document,
     serialize_analysis,
+    serialize_batch_analysis,
 )
 from flowsense.domain import (
     DEFAULT_ANALYSIS_POLICY,
@@ -49,6 +54,7 @@ from flowsense.version import __version__
 
 __all__ = [
     "ANALYSIS_SCHEMA_VERSION",
+    "BATCH_ANALYSIS_SCHEMA_VERSION",
     "DEFAULT_ANALYSIS_POLICY",
     "DEFAULT_DAG_ANALYSIS_ENGINE",
     "AirflowApiError",
@@ -61,6 +67,7 @@ __all__ = [
     "AnalysisPolicy",
     "AnalysisRequest",
     "AnalyzeDAG",
+    "BatchAnalysisDocument",
     "BatchAnalysisResult",
     "ChangeDirection",
     "ChangePointResult",
@@ -88,6 +95,9 @@ __all__ = [
     "__version__",
     "analysis_json_schema",
     "analyze_dag",
+    "batch_analysis_json_schema",
     "build_analysis_document",
+    "build_batch_analysis_document",
     "serialize_analysis",
+    "serialize_batch_analysis",
 ]
