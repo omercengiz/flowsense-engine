@@ -9,6 +9,7 @@ from flowsense import (
     BatchAnalysisResult,
     ConfigurationError,
     DAGAnalysis,
+    MappedTaskAggregation,
     Severity,
 )
 from flowsense.cli.main import app
@@ -150,9 +151,55 @@ def test_analyze_batch_outputs_versioned_json() -> None:
     assert document["requested_dag_ids"] == ["first", "second"]
     analyze_many.assert_called_once_with(
         ["first", "second"],
+        policy=ANY,
         history_run_limit=50,
         max_concurrency=2,
     )
+
+
+def test_analyze_batch_builds_policy_from_options() -> None:
+    batch = BatchAnalysisResult(
+        requested_dag_ids=("demo",),
+        analyses={"demo": _analysis_with_severity(Severity.NORMAL)},
+        failures={},
+    )
+
+    with patch(
+        "flowsense.cli.main.FlowSenseClient.analyze_many",
+        return_value=batch,
+    ) as analyze_many:
+        result = CliRunner().invoke(
+            app,
+            [
+                "analyze-batch",
+                "demo",
+                "--minimum-history",
+                "10",
+                "--baseline-window",
+                "20",
+                "--medium-threshold",
+                "2.5",
+                "--high-threshold",
+                "4",
+                "--critical-threshold",
+                "6",
+                "--no-change-point-detection",
+                "--no-trend-detection",
+                "--mapped-task-aggregation",
+                "MEAN",
+            ],
+        )
+
+    assert result.exit_code == 0
+    policy = analyze_many.call_args.kwargs["policy"]
+    assert policy.minimum_history == 10
+    assert policy.baseline_window == 20
+    assert policy.medium_threshold == 2.5
+    assert policy.high_threshold == 4.0
+    assert policy.critical_threshold == 6.0
+    assert policy.change_point_detection_enabled is False
+    assert policy.trend_detection_enabled is False
+    assert policy.mapped_task_aggregation is MappedTaskAggregation.MEAN
 
 
 def test_analyze_batch_writes_partial_result_before_failure_exit(

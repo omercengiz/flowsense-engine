@@ -14,6 +14,7 @@ All notable changes to FlowSense are documented in this file. The project uses
 - Added `flowsense analyze-batch` for bounded multi-DAG CLI analysis with the
   versioned batch JSON contract.
 - Added severity-based CI exit thresholds to batch analysis.
+- Added full analysis-policy configuration to the batch CLI.
 
 ## [0.4.0] - 2026-09-20
 
