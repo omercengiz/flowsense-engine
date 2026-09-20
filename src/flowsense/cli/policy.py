@@ -80,6 +80,13 @@ def resolve_analysis_policy(
     return build_analysis_policy(**resolved)
 
 
+def load_analysis_policy(path: Path) -> AnalysisPolicy:
+    """Load a versioned policy document without command-line overrides."""
+    document = _load_policy_document(path)
+    values = document.model_dump(exclude={"schema_version"})
+    return build_analysis_policy(**values)
+
+
 def _load_policy_document(path: Path) -> AnalysisPolicyDocument:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))

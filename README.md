@@ -379,7 +379,10 @@ information for a DAG.
 Run continuous analysis and expose the latest DAG and bounded task-level metrics:
 
 ```bash
-flowsense serve-metrics example_dag --host 0.0.0.0 --port 9108
+flowsense serve-metrics example_dag \
+  --host 0.0.0.0 \
+  --port 9108 \
+  --policy-file flowsense-policy.json
 ```
 
 See [docs/prometheus.md](docs/prometheus.md) for the metric contract,
