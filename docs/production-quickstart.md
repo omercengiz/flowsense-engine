@@ -97,6 +97,21 @@ Batch analysis accepts the same policy controls as single-DAG analysis,
 including history requirements, severity thresholds, mapped-task aggregation,
 and change-point or trend detector settings.
 
+To discover active DAGs automatically, keep the workload explicitly bounded:
+
+```bash
+flowsense analyze-batch \
+  --all-dags \
+  --dag-limit 10 \
+  --history-run-limit 50 \
+  --max-concurrency 3 \
+  --output-file flowsense-batch.json
+```
+
+Discovery excludes paused DAGs by default. Add `--include-paused` only when
+paused workflows are intentionally part of the analysis scope. Explicit DAG
+ids and `--all-dags` are mutually exclusive.
+
 With `--fail-on`, exit code `2` means at least one successful DAG analysis
 reached the selected severity. Operational DAG failures take precedence and
 retain exit code `1`.

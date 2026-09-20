@@ -15,6 +15,8 @@ All notable changes to FlowSense are documented in this file. The project uses
   versioned batch JSON contract.
 - Added severity-based CI exit thresholds to batch analysis.
 - Added full analysis-policy configuration to the batch CLI.
+- Added bounded DAG discovery to batch analysis with `--all-dags`,
+  `--dag-limit`, and optional paused-DAG inclusion.
 
 ## [0.4.0] - 2026-09-20
 

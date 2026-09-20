@@ -20,6 +20,7 @@ from flowsense.cli.doctor import DiagnosticStatus, run_airflow_diagnostics
 from flowsense.cli.report import render_analysis
 from flowsense.domain import (
     AnalysisPolicy,
+    ConfigurationError,
     FlowSenseError,
     MappedTaskAggregation,
     Severity,
@@ -164,9 +165,23 @@ def list_dags(
 @app.command("analyze-batch")
 def analyze_batch(
     dag_ids: Annotated[
-        list[str],
-        typer.Argument(help="One or more Airflow DAG ids to analyze."),
-    ],
+        list[str] | None,
+        typer.Argument(help="Explicit Airflow DAG ids to analyze."),
+    ] = None,
+    all_dags: bool = typer.Option(
+        False,
+        "--all-dags",
+        help="Discover and analyze DAGs visible to the configured identity.",
+    ),
+    include_paused: bool = typer.Option(
+        False,
+        help="Include paused DAGs when using --all-dags.",
+    ),
+    dag_limit: int | None = typer.Option(
+        None,
+        min=1,
+        help="Maximum number of discovered DAGs to analyze with --all-dags.",
+    ),
     history_run_limit: int | None = typer.Option(
         None,
         min=2,
@@ -218,8 +233,14 @@ def analyze_batch(
         ),
     ] = None,
 ) -> None:
-    """Analyze multiple explicit DAG ids and emit versioned batch JSON."""
+    """Analyze explicit or discovered DAGs and emit versioned batch JSON."""
     try:
+        selected_dag_ids = _resolve_batch_dag_ids(
+            dag_ids,
+            all_dags=all_dags,
+            include_paused=include_paused,
+            dag_limit=dag_limit,
+        )
         policy = AnalysisPolicy(
             minimum_history=minimum_history,
             baseline_window=baseline_window,
@@ -238,7 +259,7 @@ def analyze_batch(
             ),
         )
         result = FlowSenseClient(create_airflow_data_source).analyze_many(
-            dag_ids,
+            selected_dag_ids,
             policy=policy,
             history_run_limit=history_run_limit,
             max_concurrency=max_concurrency,
@@ -266,6 +287,42 @@ def analyze_batch(
             for analysis in result.analyses.values()
         ):
             raise typer.Exit(code=ANALYSIS_THRESHOLD_EXIT_CODE)
+
+
+def _resolve_batch_dag_ids(
+    dag_ids: list[str] | None,
+    *,
+    all_dags: bool,
+    include_paused: bool,
+    dag_limit: int | None,
+) -> list[str]:
+    explicit_dag_ids = dag_ids or []
+    if all_dags:
+        if explicit_dag_ids:
+            raise ConfigurationError(
+                "Explicit DAG ids cannot be combined with --all-dags."
+            )
+        config = load_airflow_config()
+        with AirflowClient(config) as airflow:
+            discovered_dag_ids = sorted(
+                airflow.list_dag_ids(include_paused=include_paused)
+            )
+        selected_dag_ids = (
+            discovered_dag_ids[:dag_limit]
+            if dag_limit is not None
+            else discovered_dag_ids
+        )
+        if not selected_dag_ids:
+            raise ConfigurationError("No DAGs were discovered for batch analysis.")
+        return selected_dag_ids
+
+    if include_paused:
+        raise ConfigurationError("--include-paused requires --all-dags.")
+    if dag_limit is not None:
+        raise ConfigurationError("--dag-limit requires --all-dags.")
+    if not explicit_dag_ids:
+        raise ConfigurationError("Provide one or more DAG ids or use --all-dags.")
+    return explicit_dag_ids
 
 
 @app.command("serve-metrics")
