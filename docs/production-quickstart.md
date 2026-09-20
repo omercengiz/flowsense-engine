@@ -60,6 +60,16 @@ export AIRFLOW_HISTORY_RUN_LIMIT="100"
 
 ## 3. Run a single-DAG smoke test
 
+Validate configuration, authentication, API routing, and DAG visibility without
+running an analysis:
+
+```bash
+flowsense doctor
+```
+
+For automation, `flowsense doctor --output json` emits structured checks and
+returns exit code `1` when a required check fails.
+
 Start with a DAG that has several successful historical runs:
 
 ```bash

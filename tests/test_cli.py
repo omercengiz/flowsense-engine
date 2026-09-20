@@ -38,6 +38,27 @@ def test_schema_output_is_deterministic() -> None:
     assert first.output == second.output
 
 
+def test_doctor_outputs_json_and_succeeds() -> None:
+    report = MagicMock(successful=True)
+    report.to_dict.return_value = {"successful": True, "checks": []}
+
+    with patch("flowsense.cli.main.run_airflow_diagnostics", return_value=report):
+        result = CliRunner().invoke(app, ["doctor", "--output", "json"])
+
+    assert result.exit_code == 0
+    assert json.loads(result.output) == {"successful": True, "checks": []}
+
+
+def test_doctor_exits_with_one_when_a_check_fails() -> None:
+    report = MagicMock(successful=False)
+    report.to_dict.return_value = {"successful": False, "checks": []}
+
+    with patch("flowsense.cli.main.run_airflow_diagnostics", return_value=report):
+        result = CliRunner().invoke(app, ["doctor", "--output", "json"])
+
+    assert result.exit_code == 1
+
+
 def test_serve_metrics_forwards_runtime_configuration() -> None:
     with patch(
         "flowsense.observability.service.run_metrics_service"

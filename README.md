@@ -187,6 +187,7 @@ export $(grep -v '^#' .env | xargs)
 Then run:
 
 ```bash
+flowsense doctor
 flowsense analyze <dag_id>
 ```
 
