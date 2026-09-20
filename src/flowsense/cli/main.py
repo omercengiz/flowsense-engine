@@ -13,6 +13,7 @@ from flowsense.application import (
     analysis_json_schema,
     serialize_analysis,
 )
+from flowsense.cli.doctor import DiagnosticStatus, run_airflow_diagnostics
 from flowsense.cli.report import render_analysis
 from flowsense.domain import (
     AnalysisPolicy,
@@ -80,6 +81,37 @@ def show_schema() -> None:
             sort_keys=True,
         )
     )
+
+
+@app.command()
+def doctor(
+    output: Annotated[
+        OutputFormat,
+        typer.Option("--output", "-o"),
+    ] = OutputFormat.TABLE,
+    include_paused: bool = typer.Option(
+        False,
+        help="Include paused DAGs when checking DAG visibility.",
+    ),
+) -> None:
+    """Validate FlowSense configuration and read-only Airflow access."""
+    report = run_airflow_diagnostics(include_paused=include_paused)
+    if output is OutputFormat.JSON:
+        typer.echo(json.dumps(report.to_dict(), indent=2, ensure_ascii=False))
+    else:
+        styles = {
+            DiagnosticStatus.PASS: "bold green",
+            DiagnosticStatus.FAIL: "bold red",
+            DiagnosticStatus.SKIP: "yellow",
+        }
+        for check in report.checks:
+            console.print(
+                f"[{styles[check.status]}]{check.status.value.upper():4}[/] "
+                f"{check.name}: {check.message}"
+            )
+
+    if not report.successful:
+        raise typer.Exit(code=1)
 
 
 @app.command("serve-metrics")

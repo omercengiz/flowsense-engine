@@ -8,6 +8,8 @@ All notable changes to FlowSense are documented in this file. The project uses
 ### Added
 
 - Added a production quickstart and executable bounded batch-analysis example.
+- Added `flowsense doctor` for safe configuration, Airflow API, authentication,
+  and DAG-visibility diagnostics.
 
 ## [0.4.0] - 2026-09-20
 
