@@ -6,6 +6,7 @@ from typer.testing import CliRunner
 
 from flowsense import (
     ANALYSIS_SCHEMA_VERSION,
+    BATCH_ANALYSIS_SCHEMA_VERSION,
     BatchAnalysisResult,
     ConfigurationError,
     DAGAnalysis,
@@ -44,6 +45,21 @@ def test_schema_output_is_deterministic() -> None:
     assert first.exit_code == 0
     assert second.exit_code == 0
     assert first.output == second.output
+
+
+def test_schema_outputs_batch_contract_without_airflow() -> None:
+    with patch("flowsense.cli.main.create_airflow_data_source") as source_factory:
+        result = CliRunner().invoke(app, ["schema", "--document", "batch"])
+
+    assert result.exit_code == 0
+    schema = json.loads(result.output)
+    assert schema["properties"]["schema_version"]["const"] == (
+        BATCH_ANALYSIS_SCHEMA_VERSION
+    )
+    assert schema["title"] == "BatchAnalysisDocument"
+    assert "analyses" in schema["properties"]
+    assert "failures" in schema["properties"]
+    source_factory.assert_not_called()
 
 
 def test_doctor_outputs_json_and_succeeds() -> None:

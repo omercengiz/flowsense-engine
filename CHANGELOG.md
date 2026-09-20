@@ -17,6 +17,8 @@ All notable changes to FlowSense are documented in this file. The project uses
 - Added full analysis-policy configuration to the batch CLI.
 - Added bounded DAG discovery to batch analysis with `--all-dags`,
   `--dag-limit`, and optional paused-DAG inclusion.
+- Added CLI access to the versioned batch output JSON Schema through
+  `flowsense schema --document batch`.
 
 ## [0.4.0] - 2026-09-20
 
