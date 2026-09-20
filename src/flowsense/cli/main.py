@@ -13,6 +13,7 @@ from flowsense.application import (
     AnalyzeDAG,
     FlowSenseClient,
     analysis_json_schema,
+    batch_analysis_json_schema,
     serialize_analysis,
     serialize_batch_analysis,
 )
@@ -61,6 +62,11 @@ class FailureThreshold(StrEnum):
     CRITICAL = "critical"
 
 
+class SchemaDocument(StrEnum):
+    ANALYSIS = "analysis"
+    BATCH = "batch"
+
+
 @app.callback()
 def main(
     version: Annotated[
@@ -77,11 +83,24 @@ def main(
 
 
 @app.command("schema")
-def show_schema() -> None:
-    """Print the versioned analysis output JSON Schema."""
+def show_schema(
+    document: Annotated[
+        SchemaDocument,
+        typer.Option(
+            "--document",
+            help="Output contract whose JSON Schema should be printed.",
+        ),
+    ] = SchemaDocument.ANALYSIS,
+) -> None:
+    """Print a versioned FlowSense output JSON Schema."""
+    schema = (
+        batch_analysis_json_schema()
+        if document is SchemaDocument.BATCH
+        else analysis_json_schema()
+    )
     typer.echo(
         json.dumps(
-            analysis_json_schema(),
+            schema,
             indent=2,
             ensure_ascii=False,
             sort_keys=True,

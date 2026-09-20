@@ -254,7 +254,12 @@ The same schema can be emitted without connecting to Airflow:
 
 ```bash
 flowsense schema > flowsense-analysis.schema.json
+flowsense schema --document batch > flowsense-batch.schema.json
 ```
+
+The default remains the single-DAG analysis schema. Use `--document batch` to
+emit the versioned batch envelope schema, including successful analyses and
+per-DAG failure records.
 
 This output is deterministic and can be used in CI contract checks, editor
 tooling, or client code generation.
