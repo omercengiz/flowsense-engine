@@ -82,6 +82,30 @@ def test_reports_missing_credentials_as_configuration_error(
         load_airflow_config()
 
 
+def test_reads_static_bearer_token_without_username_or_password(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("AIRFLOW_AUTH_MODE", "bearer")
+    monkeypatch.setenv("AIRFLOW_BEARER_TOKEN", "static-token")
+    monkeypatch.delenv("AIRFLOW_USERNAME", raising=False)
+    monkeypatch.delenv("AIRFLOW_PASSWORD", raising=False)
+
+    config = load_airflow_config()
+
+    assert config.auth_mode == "bearer"
+    assert config.bearer_token == "static-token"
+
+
+def test_rejects_missing_static_bearer_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("AIRFLOW_AUTH_MODE", "bearer")
+    monkeypatch.delenv("AIRFLOW_BEARER_TOKEN", raising=False)
+
+    with pytest.raises(ConfigurationError, match="AIRFLOW_BEARER_TOKEN"):
+        load_airflow_config()
+
+
 @pytest.mark.parametrize("api_version", ["v1", "v2"])
 def test_uses_configured_stable_api_version(api_version: str) -> None:
     http_client = MagicMock(spec=httpx.Client)

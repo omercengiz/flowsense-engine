@@ -66,6 +66,10 @@ are required.
 variables. `load_airflow_config()` and `create_airflow_data_source()` belong to
 the infrastructure composition boundary.
 
+Authentication is supplied through `AirflowAuthProvider`. Built-in providers
+cover Basic Auth, Airflow login-token exchange, static bearer tokens, and custom
+headers without coupling request collection to a deployment's identity system.
+
 ### Delivery adapters
 
 `flowsense.cli`, `flowsense.mcp`, and `flowsense.observability` translate user input into an
