@@ -11,6 +11,8 @@ All notable changes to FlowSense are documented in this file. The project uses
 - Added `flowsense doctor` for safe configuration, Airflow API, authentication,
   and DAG-visibility diagnostics.
 - Added `flowsense dags` for read-only DAG discovery with table and JSON output.
+- Added `flowsense analyze-batch` for bounded multi-DAG CLI analysis with the
+  versioned batch JSON contract.
 
 ## [0.4.0] - 2026-09-20
 

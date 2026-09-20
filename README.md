@@ -190,6 +190,7 @@ Then run:
 flowsense doctor
 flowsense dags
 flowsense analyze <dag_id>
+flowsense analyze-batch <dag_id> [<dag_id> ...]
 ```
 
 The CLI report includes a DAG summary and separate tables for task drift,

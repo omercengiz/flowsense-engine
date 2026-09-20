@@ -1,9 +1,16 @@
 import json
+from pathlib import Path
 from unittest.mock import ANY, MagicMock, patch
 
 from typer.testing import CliRunner
 
-from flowsense import ANALYSIS_SCHEMA_VERSION, ConfigurationError, DAGAnalysis, Severity
+from flowsense import (
+    ANALYSIS_SCHEMA_VERSION,
+    BatchAnalysisResult,
+    ConfigurationError,
+    DAGAnalysis,
+    Severity,
+)
 from flowsense.cli.main import app
 from flowsense.infrastructure.airflow import AirflowApiError
 from flowsense.version import __version__
@@ -108,6 +115,76 @@ def test_dags_reports_empty_result_in_table_mode() -> None:
 
     assert result.exit_code == 0
     assert "No DAGs found" in result.output
+
+
+def test_analyze_batch_outputs_versioned_json() -> None:
+    batch = BatchAnalysisResult(
+        requested_dag_ids=("first", "second"),
+        analyses={
+            "first": _analysis_with_severity(Severity.NORMAL),
+            "second": _analysis_with_severity(Severity.HIGH),
+        },
+        failures={},
+    )
+
+    with patch(
+        "flowsense.cli.main.FlowSenseClient.analyze_many",
+        return_value=batch,
+    ) as analyze_many:
+        result = CliRunner().invoke(
+            app,
+            [
+                "analyze-batch",
+                "first",
+                "second",
+                "--history-run-limit",
+                "50",
+                "--max-concurrency",
+                "2",
+            ],
+        )
+
+    assert result.exit_code == 0
+    document = json.loads(result.output)
+    assert document["schema_version"] == "1.0"
+    assert document["requested_dag_ids"] == ["first", "second"]
+    analyze_many.assert_called_once_with(
+        ["first", "second"],
+        history_run_limit=50,
+        max_concurrency=2,
+    )
+
+
+def test_analyze_batch_writes_partial_result_before_failure_exit(
+    tmp_path: Path,
+) -> None:
+    batch = BatchAnalysisResult(
+        requested_dag_ids=("first", "broken"),
+        analyses={"first": _analysis_with_severity(Severity.NORMAL)},
+        failures={"broken": ConfigurationError("invalid configuration")},
+    )
+    output_path = tmp_path / "batch.json"
+
+    with patch(
+        "flowsense.cli.main.FlowSenseClient.analyze_many",
+        return_value=batch,
+    ):
+        result = CliRunner().invoke(
+            app,
+            [
+                "analyze-batch",
+                "first",
+                "broken",
+                "--output-file",
+                str(output_path),
+            ],
+        )
+        document = json.loads(output_path.read_text(encoding="utf-8"))
+
+    assert result.exit_code == 1
+    assert document["successful_count"] == 1
+    assert document["failed_count"] == 1
+    assert document["failures"]["broken"]["error_type"] == "ConfigurationError"
 
 
 def test_serve_metrics_forwards_runtime_configuration() -> None:
