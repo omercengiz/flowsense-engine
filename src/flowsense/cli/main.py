@@ -415,6 +415,13 @@ def analyze(
         OutputFormat,
         typer.Option("--output", "-o"),
     ] = OutputFormat.TABLE,
+    output_file: Annotated[
+        Path | None,
+        typer.Option(
+            "--output-file",
+            help="Write versioned analysis JSON to this file.",
+        ),
+    ] = None,
     fail_on: Annotated[
         FailureThreshold | None,
         typer.Option(
@@ -469,14 +476,20 @@ def analyze(
         console.print(f"[bold red]Analysis failed:[/bold red] {exc}")
         raise typer.Exit(code=1) from exc
 
-    if output is OutputFormat.JSON:
-        typer.echo(
-            json.dumps(
-                serialize_analysis(analysis),
-                indent=2,
-                ensure_ascii=False,
-            )
+    if output_file is not None or output is OutputFormat.JSON:
+        rendered = json.dumps(
+            serialize_analysis(analysis),
+            indent=2,
+            ensure_ascii=False,
         )
+        if output_file is None:
+            typer.echo(rendered)
+        else:
+            try:
+                output_file.write_text(f"{rendered}\n", encoding="utf-8")
+            except OSError as exc:
+                console.print(f"[bold red]Output write failed:[/bold red] {exc}")
+                raise typer.Exit(code=1) from exc
     else:
         render_analysis(console, analysis)
 
