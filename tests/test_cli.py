@@ -59,6 +59,57 @@ def test_doctor_exits_with_one_when_a_check_fails() -> None:
     assert result.exit_code == 1
 
 
+def test_dags_outputs_discovered_ids_as_json() -> None:
+    client = MagicMock()
+    client.__enter__.return_value = client
+    client.list_dag_ids.return_value = ["orders", "payments"]
+
+    with (
+        patch("flowsense.cli.main.load_airflow_config"),
+        patch("flowsense.cli.main.AirflowClient", return_value=client),
+    ):
+        result = CliRunner().invoke(
+            app,
+            ["dags", "--include-paused", "--output", "json"],
+        )
+
+    assert result.exit_code == 0
+    assert json.loads(result.output) == {
+        "count": 2,
+        "include_paused": True,
+        "dag_ids": ["orders", "payments"],
+    }
+    client.list_dag_ids.assert_called_once_with(include_paused=True)
+
+
+def test_dags_reports_configuration_failure_without_traceback() -> None:
+    with patch(
+        "flowsense.cli.main.load_airflow_config",
+        side_effect=ConfigurationError("AIRFLOW_USERNAME is required."),
+    ):
+        result = CliRunner().invoke(app, ["dags"])
+
+    assert result.exit_code == 1
+    assert "DAG discovery failed" in result.output
+    assert "AIRFLOW_USERNAME is required" in result.output
+    assert "Traceback" not in result.output
+
+
+def test_dags_reports_empty_result_in_table_mode() -> None:
+    client = MagicMock()
+    client.__enter__.return_value = client
+    client.list_dag_ids.return_value = []
+
+    with (
+        patch("flowsense.cli.main.load_airflow_config"),
+        patch("flowsense.cli.main.AirflowClient", return_value=client),
+    ):
+        result = CliRunner().invoke(app, ["dags"])
+
+    assert result.exit_code == 0
+    assert "No DAGs found" in result.output
+
+
 def test_serve_metrics_forwards_runtime_configuration() -> None:
     with patch(
         "flowsense.observability.service.run_metrics_service"

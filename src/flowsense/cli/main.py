@@ -24,7 +24,9 @@ from flowsense.domain import (
 )
 from flowsense.infrastructure.airflow import (
     AirflowApiError,
+    AirflowClient,
     create_airflow_data_source,
+    load_airflow_config,
 )
 from flowsense.version import __version__
 
@@ -112,6 +114,48 @@ def doctor(
 
     if not report.successful:
         raise typer.Exit(code=1)
+
+
+@app.command("dags")
+def list_dags(
+    output: Annotated[
+        OutputFormat,
+        typer.Option("--output", "-o"),
+    ] = OutputFormat.TABLE,
+    include_paused: bool = typer.Option(
+        False,
+        help="Include paused DAGs in the result.",
+    ),
+) -> None:
+    """List DAG ids visible to the configured Airflow identity."""
+    try:
+        config = load_airflow_config()
+        with AirflowClient(config) as airflow:
+            dag_ids = airflow.list_dag_ids(include_paused=include_paused)
+    except FlowSenseError as exc:
+        console.print(f"[bold red]DAG discovery failed:[/bold red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    if output is OutputFormat.JSON:
+        typer.echo(
+            json.dumps(
+                {
+                    "count": len(dag_ids),
+                    "include_paused": include_paused,
+                    "dag_ids": dag_ids,
+                },
+                indent=2,
+                ensure_ascii=False,
+            )
+        )
+        return
+
+    if not dag_ids:
+        console.print("No DAGs found.")
+        return
+
+    for dag_id in dag_ids:
+        console.print(dag_id)
 
 
 @app.command("serve-metrics")
