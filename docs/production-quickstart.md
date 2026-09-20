@@ -116,6 +116,12 @@ With `--fail-on`, exit code `2` means at least one successful DAG analysis
 reached the selected severity. Operational DAG failures take precedence and
 retain exit code `1`.
 
+Export the matching JSON Schema for validation in downstream automation:
+
+```bash
+flowsense schema --document batch > flowsense-batch.schema.json
+```
+
 Start with a DAG that has several successful historical runs:
 
 ```bash
