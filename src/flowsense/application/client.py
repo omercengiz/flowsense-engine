@@ -1,4 +1,7 @@
+from collections.abc import Iterable
+
 from flowsense.application.analysis_engine import DEFAULT_DAG_ANALYSIS_ENGINE
+from flowsense.application.batch import AnalyzeDAGBatch, BatchAnalysisResult
 from flowsense.application.ports import DAGAnalysisEngine
 from flowsense.application.request import AnalysisRequest
 from flowsense.application.use_cases import AnalyzeDAG, DAGDataSourceFactory
@@ -17,6 +20,7 @@ class FlowSenseClient:
             source_factory=source_factory,
             analysis_engine=analysis_engine,
         )
+        self._analyze_batch = AnalyzeDAGBatch(self._analyze_dag)
 
     def analyze(
         self,
@@ -39,3 +43,19 @@ class FlowSenseClient:
     def execute(self, request: AnalysisRequest) -> DAGAnalysis:
         """Execute an already validated analysis request."""
         return self._analyze_dag.execute(request)
+
+    def analyze_many(
+        self,
+        dag_ids: Iterable[str],
+        *,
+        policy: AnalysisPolicy = DEFAULT_ANALYSIS_POLICY,
+        history_run_limit: int | None = None,
+        max_concurrency: int = 1,
+    ) -> BatchAnalysisResult:
+        """Analyze multiple DAGs, isolating expected failures by DAG id."""
+        return self._analyze_batch.execute(
+            dag_ids,
+            policy=policy,
+            history_run_limit=history_run_limit,
+            max_concurrency=max_concurrency,
+        )
