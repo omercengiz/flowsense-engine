@@ -33,8 +33,8 @@ After the release pull request is merged into `master` and CI passes:
 ```bash
 git switch master
 git pull --ff-only origin master
-git tag -a v0.4.0 -m "FlowSense 0.4.0"
-git push origin v0.4.0
+git tag -a v0.5.0 -m "FlowSense 0.5.0"
+git push origin v0.5.0
 ```
 
 Create and publish the corresponding GitHub Release after pushing the tag. The
@@ -42,6 +42,7 @@ release workflow builds that exact tag and publishes it through the protected
 `pypi` environment. Package publication should run only after the built artifacts
 have been verified.
 
-Use `FlowSense 0.4.0` as the release title, select `Latest`, and do not mark a
-stable release as a pre-release. Copy the `0.4.0` section from `CHANGELOG.md` into
-the release notes.
+Use `FlowSense 0.5.0` as the release title, select `Latest`, and do not mark a
+stable release as a pre-release. Use [release-0.5.0.md](release-0.5.0.md) as the
+GitHub release notes; the matching `CHANGELOG.md` section remains the canonical
+change inventory.
