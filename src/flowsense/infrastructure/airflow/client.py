@@ -95,6 +95,7 @@ class AirflowClient:
         )
         self._sleep = sleep or time.sleep
         self._token: str | None = None
+        self._uses_login_token = auth_provider is None and self.auth_mode == "token"
         self._auth_provider = auth_provider or self._create_auth_provider(config)
 
     def __enter__(self) -> Self:
@@ -144,6 +145,7 @@ class AirflowClient:
             try:
                 response.raise_for_status()
             except httpx.HTTPStatusError as exc:
+                response.close()
                 raise AirflowApiError(
                     method=method,
                     endpoint=exc.request.url.path,
@@ -153,6 +155,36 @@ class AirflowClient:
             return response
 
         raise RuntimeError("Airflow request retry loop exited unexpectedly")
+
+    def _authenticated_request(
+        self,
+        method: str,
+        url: str,
+        *,
+        headers: dict[str, str] | None = None,
+        **kwargs: object,
+    ) -> httpx.Response:
+        for auth_attempt in range(2):
+            request_auth = self._auth_provider.request_auth()
+            request_kwargs: dict[str, object] = {
+                **kwargs,
+                "headers": {**(headers or {}), **request_auth.headers},
+            }
+            if request_auth.auth is not None:
+                request_kwargs["auth"] = request_auth.auth
+
+            try:
+                return self._request(method=method, url=url, **request_kwargs)
+            except AirflowApiError as exc:
+                if (
+                    exc.status_code != 401
+                    or not self._uses_login_token
+                    or auth_attempt > 0
+                ):
+                    raise
+                self._token = None
+
+        raise RuntimeError("Airflow authentication retry loop exited unexpectedly")
 
     def _backoff_delay(self, attempt: int) -> float:
         return self.retry_backoff * (2**attempt)
@@ -238,25 +270,18 @@ class AirflowClient:
         last_page: dict = {}
 
         while True:
-            request_auth = self._auth_provider.request_auth()
             page_size = PAGE_SIZE
             if item_limit is not None:
                 page_size = min(PAGE_SIZE, item_limit - len(items))
-            request_kwargs: dict[str, object] = {
-                "headers": {"Accept": "application/json", **request_auth.headers},
-                "params": {
+            response = self._authenticated_request(
+                method="GET",
+                url=url,
+                headers={"Accept": "application/json"},
+                params={
                     **(params or {}),
                     "limit": page_size,
                     "offset": offset,
                 },
-            }
-            if request_auth.auth is not None:
-                request_kwargs["auth"] = request_auth.auth
-
-            response = self._request(
-                method="GET",
-                url=url,
-                **request_kwargs,
             )
 
             last_page = self._response_json(response, collection_key)
@@ -305,15 +330,12 @@ class AirflowClient:
             page_size = PAGE_SIZE
             if item_limit is not None:
                 page_size = min(PAGE_SIZE, item_limit - len(items))
-            request_auth = self._auth_provider.request_auth()
-            request_kwargs: dict[str, object] = {
-                "headers": {"Accept": "application/json", **request_auth.headers},
-                "json": {**body, "page_limit": page_size, "page_offset": offset},
-            }
-            if request_auth.auth is not None:
-                request_kwargs["auth"] = request_auth.auth
-
-            response = self._request(method="POST", url=url, **request_kwargs)
+            response = self._authenticated_request(
+                method="POST",
+                url=url,
+                headers={"Accept": "application/json"},
+                json={**body, "page_limit": page_size, "page_offset": offset},
+            )
             last_page = self._response_json(response, collection_key)
             page_items = last_page.get(collection_key)
             if not isinstance(page_items, list):

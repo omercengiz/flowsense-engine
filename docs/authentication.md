@@ -16,8 +16,11 @@ AIRFLOW_USERNAME=airflow
 AIRFLOW_PASSWORD=secret
 ```
 
-FlowSense exchanges the credentials once and caches the returned bearer token
-for the lifetime of the client.
+FlowSense exchanges the credentials and caches the returned bearer token for
+the lifetime of the client. If an Airflow API request returns `401`, FlowSense
+invalidates a login-issued token, obtains a fresh token, and retries that API
+request once. A second `401` is returned as `AirflowApiError`; it is never
+retried indefinitely.
 
 ### Basic authentication
 
@@ -42,6 +45,9 @@ AIRFLOW_BEARER_TOKEN=secret-token
 Username and password are not required in bearer mode. Secrets are excluded
 from the `AirflowConfig` representation, but applications must still keep them
 out of logs, shell history, source control, and command-line arguments.
+Static bearer tokens are not automatically replaced after `401`; their
+lifecycle remains owned by the application or identity provider that issued
+them.
 
 ## Custom provider
 
@@ -74,4 +80,6 @@ provider = BearerTokenAuthProvider(load_current_token)
 
 Custom providers should return only authentication material and leave request
 execution, retry, timeout, payload validation, and error translation to
-`AirflowClient`.
+`AirflowClient`. A `401` from a custom provider is not interpreted as permission
+to rotate external credentials; the owning application decides how to refresh
+them.

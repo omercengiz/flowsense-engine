@@ -4,6 +4,7 @@ import httpx
 import pytest
 
 from flowsense.infrastructure.airflow import (
+    AirflowApiError,
     AirflowClient,
     AirflowConfig,
     AirflowRequestAuth,
@@ -101,6 +102,70 @@ def test_static_bearer_mode_does_not_call_login_endpoint() -> None:
 
     assert [request.url.path for request in requests] == ["/api/v2/dags/demo/dagRuns"]
     assert requests[0].headers["Authorization"] == "Bearer static-token"
+
+
+def test_login_token_is_refreshed_once_after_unauthorized_response() -> None:
+    requests: list[httpx.Request] = []
+    issued_tokens = iter(["expired-token", "fresh-token"])
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        if request.url.path == "/auth/token":
+            return httpx.Response(200, json={"access_token": next(issued_tokens)})
+        if request.headers["Authorization"] == "Bearer expired-token":
+            return httpx.Response(401)
+        return httpx.Response(200, json={"dag_runs": [], "total_entries": 0})
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as http_client:
+        client = AirflowClient(
+            AirflowConfig(
+                base_url="http://airflow.test",
+                username="airflow",
+                password="secret",
+                auth_mode="token",
+                max_retries=0,
+            ),
+            http_client=http_client,
+        )
+        client.get_dag_runs("demo")
+
+    assert [request.url.path for request in requests] == [
+        "/auth/token",
+        "/api/v2/dags/demo/dagRuns",
+        "/auth/token",
+        "/api/v2/dags/demo/dagRuns",
+    ]
+    assert requests[-1].headers["Authorization"] == "Bearer fresh-token"
+
+
+def test_login_token_refresh_retries_api_request_only_once() -> None:
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        if request.url.path == "/auth/token":
+            token_number = sum(item.url.path == "/auth/token" for item in requests)
+            return httpx.Response(200, json={"access_token": f"token-{token_number}"})
+        return httpx.Response(401)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as http_client:
+        client = AirflowClient(
+            AirflowConfig(
+                base_url="http://airflow.test",
+                username="airflow",
+                password="secret",
+                auth_mode="token",
+                max_retries=0,
+            ),
+            http_client=http_client,
+        )
+        with pytest.raises(AirflowApiError, match="status 401"):
+            client.get_dag_runs("demo")
+
+    assert [request.url.path for request in requests].count("/auth/token") == 2
+    assert [request.url.path for request in requests].count(
+        "/api/v2/dags/demo/dagRuns"
+    ) == 2
 
 
 def test_config_repr_does_not_expose_secrets() -> None:
