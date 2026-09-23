@@ -29,6 +29,9 @@ All notable changes to FlowSense are documented in this file. The project uses
   so Airflow collection remains explicitly bounded.
 - Added expanded Ruff quality rules, a 90% CI coverage gate, and graceful MCP
   test skipping when the optional dependency is not installed.
+- Reduced Airflow collection overhead with bounded server-side DAG run filters
+  and batched task-instance retrieval, including compatibility fallbacks for
+  deployments that do not support the optimized endpoints.
 
 ## [0.4.0] - 2026-09-20
 

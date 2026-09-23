@@ -139,7 +139,7 @@ def test_collect_task_runs_limits_to_latest_successful_dag_runs(
     client: AirflowClient,
 ) -> None:
     client.history_run_limit = 2
-    client.get_dag_runs = MagicMock(
+    client._get_recent_successful_dag_runs = MagicMock(
         return_value={
             "dag_runs": [
                 {
@@ -165,14 +165,16 @@ def test_collect_task_runs_limits_to_latest_successful_dag_runs(
             ]
         }
     )
-    client.get_task_instances = MagicMock(
-        side_effect=lambda dag_id, dag_run_id: {
+    client._get_successful_task_instances = MagicMock(
+        return_value={
             "task_instances": [
                 {
-                    "task_id": f"task_{dag_id}_{dag_run_id}",
+                    "task_id": f"task_demo_{dag_run_id}",
+                    "dag_run_id": dag_run_id,
                     "state": "success",
                     "duration": 1.0,
                 }
+                for dag_run_id in ["middle", "newest"]
             ]
         }
     )
@@ -180,10 +182,9 @@ def test_collect_task_runs_limits_to_latest_successful_dag_runs(
     task_runs = client.collect_task_runs("demo")
 
     assert [run.dag_run_id for run in task_runs] == ["middle", "newest"]
-    assert client.get_task_instances.call_args_list == [
-        call(dag_id="demo", dag_run_id="middle"),
-        call(dag_id="demo", dag_run_id="newest"),
-    ]
+    client._get_successful_task_instances.assert_called_once_with(
+        "demo", ["middle", "newest"]
+    )
 
 
 def test_collect_task_runs_ends_history_at_target_dag_run(
@@ -206,14 +207,16 @@ def test_collect_task_runs_ends_history_at_target_dag_run(
             ]
         }
     )
-    client.get_task_instances = MagicMock(
-        side_effect=lambda dag_id, dag_run_id: {
+    client._get_successful_task_instances = MagicMock(
+        return_value={
             "task_instances": [
                 {
-                    "task_id": f"task_{dag_id}_{dag_run_id}",
+                    "task_id": f"task_demo_{dag_run_id}",
+                    "dag_run_id": dag_run_id,
                     "state": "success",
                     "duration": 1.0,
                 }
+                for dag_run_id in ["oldest", "middle"]
             ]
         }
     )
@@ -298,7 +301,169 @@ def test_wraps_invalid_paginated_json_as_airflow_data_error(
 def test_wraps_invalid_dag_run_schema_as_airflow_data_error(
     client: AirflowClient,
 ) -> None:
-    client.get_dag_runs = MagicMock(return_value={"dag_runs": [{"state": "success"}]})
+    client._get_recent_successful_dag_runs = MagicMock(
+        return_value={"dag_runs": [{"state": "success"}]}
+    )
 
     with pytest.raises(AirflowDataError, match="DAG run"):
         client.collect_task_runs("demo")
+
+
+def test_airflow_3_filters_and_bounds_recent_successful_dag_runs(
+    client: AirflowClient,
+    http_client: MagicMock,
+) -> None:
+    client.history_run_limit = 25
+    response = MagicMock()
+    response.json.return_value = {"dag_runs": [], "total_entries": 1000}
+    http_client.request.return_value = response
+
+    client._get_recent_successful_dag_runs("demo")
+
+    assert http_client.request.call_args.kwargs["params"] == {
+        "states": ["success"],
+        "order_by": "-run_after",
+        "limit": 25,
+        "offset": 0,
+    }
+
+
+def test_airflow_2_uses_batch_dag_run_filter(http_client: MagicMock) -> None:
+    response = MagicMock()
+    response.json.return_value = {"dag_runs": [], "total_entries": 0}
+    http_client.request.return_value = response
+    client = AirflowClient(
+        AirflowConfig(
+            base_url="http://airflow.test",
+            username="airflow",
+            password="airflow",
+            api_version="v1",
+            auth_mode="basic",
+        ),
+        history_run_limit=20,
+        http_client=http_client,
+    )
+
+    client._get_recent_successful_dag_runs("demo")
+
+    assert http_client.request.call_args.kwargs["json"] == {
+        "dag_ids": ["demo"],
+        "states": ["success"],
+        "order_by": "-execution_date",
+        "page_limit": 20,
+        "page_offset": 0,
+    }
+
+
+def test_filtered_dag_run_query_falls_back_when_unsupported() -> None:
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        if request.url.params.get("states"):
+            return httpx.Response(422, request=request)
+        return httpx.Response(
+            200,
+            request=request,
+            json={"dag_runs": [], "total_entries": 0},
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as http_client:
+        client = AirflowClient(
+            AirflowConfig(
+                base_url="http://airflow.test",
+                auth_mode="bearer",
+                bearer_token="token",
+                max_retries=0,
+            ),
+            http_client=http_client,
+        )
+        client._get_recent_successful_dag_runs("demo")
+
+    assert len(requests) == 2
+    assert requests[1].url.params.get("states") is None
+
+
+def test_airflow_3_batches_successful_task_instances(
+    client: AirflowClient,
+    http_client: MagicMock,
+) -> None:
+    response = MagicMock()
+    response.json.return_value = {"task_instances": [], "total_entries": 0}
+    http_client.request.return_value = response
+
+    client._get_successful_task_instances("demo", ["run_1", "run_2"])
+
+    request = http_client.request.call_args.kwargs
+    assert request["url"].endswith("/dags/demo/dagRuns/~/taskInstances")
+    assert request["params"] == {
+        "dag_run_ids": ["run_1", "run_2"],
+        "states": ["success"],
+        "limit": PAGE_SIZE,
+        "offset": 0,
+    }
+
+
+def test_airflow_2_batches_successful_task_instances(http_client: MagicMock) -> None:
+    response = MagicMock()
+    response.json.return_value = {"task_instances": [], "total_entries": 0}
+    http_client.request.return_value = response
+    client = AirflowClient(
+        AirflowConfig(
+            base_url="http://airflow.test",
+            username="airflow",
+            password="airflow",
+            api_version="v1",
+            auth_mode="basic",
+        ),
+        http_client=http_client,
+    )
+
+    client._get_successful_task_instances("demo", ["run_1", "run_2"])
+
+    request = http_client.request.call_args.kwargs
+    assert request["url"].endswith("/dags/~/dagRuns/~/taskInstances/list")
+    assert request["json"] == {
+        "dag_ids": ["demo"],
+        "dag_run_ids": ["run_1", "run_2"],
+        "state": ["success"],
+        "page_limit": PAGE_SIZE,
+        "page_offset": 0,
+    }
+
+
+def test_batch_task_instances_fall_back_to_per_run_requests() -> None:
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        if "/~/taskInstances" in request.url.path:
+            return httpx.Response(404, request=request)
+        return httpx.Response(
+            200,
+            request=request,
+            json={
+                "task_instances": [
+                    {"task_id": "extract", "state": "success", "duration": 1.0}
+                ],
+                "total_entries": 1,
+            },
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as http_client:
+        client = AirflowClient(
+            AirflowConfig(
+                base_url="http://airflow.test",
+                auth_mode="bearer",
+                bearer_token="token",
+                max_retries=0,
+            ),
+            http_client=http_client,
+        )
+        result = client._get_successful_task_instances("demo", ["run_1", "run_2"])
+
+    assert [item["dag_run_id"] for item in result["task_instances"]] == [
+        "run_1",
+        "run_2",
+    ]
+    assert len(requests) == 3

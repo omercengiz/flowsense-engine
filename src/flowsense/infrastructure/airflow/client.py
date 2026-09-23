@@ -36,6 +36,7 @@ PAGE_SIZE = 100
 AirflowApiVersion = Literal["v1", "v2"]
 AirflowAuthMode = Literal["basic", "token", "bearer"]
 RETRYABLE_STATUS_CODES = frozenset({429, 502, 503, 504})
+UNSUPPORTED_FILTER_STATUS_CODES = frozenset({400, 404, 405, 422})
 
 
 class AirflowClient:
@@ -228,6 +229,9 @@ class AirflowClient:
         self,
         url: str,
         collection_key: str,
+        *,
+        params: dict[str, object] | None = None,
+        item_limit: int | None = None,
     ) -> dict:
         items: list[dict] = []
         offset = 0
@@ -235,9 +239,16 @@ class AirflowClient:
 
         while True:
             request_auth = self._auth_provider.request_auth()
+            page_size = PAGE_SIZE
+            if item_limit is not None:
+                page_size = min(PAGE_SIZE, item_limit - len(items))
             request_kwargs: dict[str, object] = {
                 "headers": {"Accept": "application/json", **request_auth.headers},
-                "params": {"limit": PAGE_SIZE, "offset": offset},
+                "params": {
+                    **(params or {}),
+                    "limit": page_size,
+                    "offset": offset,
+                },
             }
             if request_auth.auth is not None:
                 request_kwargs["auth"] = request_auth.auth
@@ -257,13 +268,17 @@ class AirflowClient:
             if total_entries is not None and not isinstance(total_entries, int):
                 raise AirflowDataError(collection_key)
 
+            if item_limit is not None and len(items) >= item_limit:
+                items = items[:item_limit]
+                break
+
             if not page_items:
                 break
 
             if total_entries is not None and len(items) >= total_entries:
                 break
 
-            if total_entries is None and len(page_items) < PAGE_SIZE:
+            if total_entries is None and len(page_items) < page_size:
                 break
 
             offset += len(page_items)
@@ -273,6 +288,119 @@ class AirflowClient:
             collection_key: items,
             "total_entries": last_page.get("total_entries", len(items)),
         }
+
+    def _post_paginated(
+        self,
+        url: str,
+        collection_key: str,
+        *,
+        body: dict[str, object],
+        item_limit: int | None = None,
+    ) -> dict:
+        items: list[dict] = []
+        offset = 0
+        last_page: dict = {}
+
+        while True:
+            page_size = PAGE_SIZE
+            if item_limit is not None:
+                page_size = min(PAGE_SIZE, item_limit - len(items))
+            request_auth = self._auth_provider.request_auth()
+            request_kwargs: dict[str, object] = {
+                "headers": {"Accept": "application/json", **request_auth.headers},
+                "json": {**body, "page_limit": page_size, "page_offset": offset},
+            }
+            if request_auth.auth is not None:
+                request_kwargs["auth"] = request_auth.auth
+
+            response = self._request(method="POST", url=url, **request_kwargs)
+            last_page = self._response_json(response, collection_key)
+            page_items = last_page.get(collection_key)
+            if not isinstance(page_items, list):
+                raise AirflowDataError(collection_key)
+            items.extend(page_items)
+            total_entries = last_page.get("total_entries")
+            if total_entries is not None and not isinstance(total_entries, int):
+                raise AirflowDataError(collection_key)
+
+            if item_limit is not None and len(items) >= item_limit:
+                items = items[:item_limit]
+                break
+            if not page_items or (
+                total_entries is not None and len(items) >= total_entries
+            ):
+                break
+            if total_entries is None and len(page_items) < page_size:
+                break
+            offset += len(page_items)
+
+        return {
+            **last_page,
+            collection_key: items,
+            "total_entries": last_page.get("total_entries", len(items)),
+        }
+
+    def _get_recent_successful_dag_runs(self, dag_id: str) -> dict:
+        if self.target_dag_run_id is not None:
+            return self.get_dag_runs(dag_id)
+
+        try:
+            if self.api_version == "v1":
+                return self._post_paginated(
+                    self._api_url("/dags/~/dagRuns/list"),
+                    "dag_runs",
+                    body={
+                        "dag_ids": [dag_id],
+                        "states": ["success"],
+                        "order_by": "-execution_date",
+                    },
+                    item_limit=self.history_run_limit,
+                )
+            return self._get_paginated(
+                self._api_url(f"/dags/{dag_id}/dagRuns"),
+                "dag_runs",
+                params={"states": ["success"], "order_by": "-run_after"},
+                item_limit=self.history_run_limit,
+            )
+        except AirflowApiError as exc:
+            if exc.status_code not in UNSUPPORTED_FILTER_STATUS_CODES:
+                raise
+            return self.get_dag_runs(dag_id)
+
+    def _get_successful_task_instances(
+        self,
+        dag_id: str,
+        dag_run_ids: list[str],
+    ) -> dict:
+        try:
+            if self.api_version == "v1":
+                return self._post_paginated(
+                    self._api_url("/dags/~/dagRuns/~/taskInstances/list"),
+                    "task_instances",
+                    body={
+                        "dag_ids": [dag_id],
+                        "dag_run_ids": dag_run_ids,
+                        "state": ["success"],
+                    },
+                )
+            return self._get_paginated(
+                self._api_url(f"/dags/{dag_id}/dagRuns/~/taskInstances"),
+                "task_instances",
+                params={"dag_run_ids": dag_run_ids, "states": ["success"]},
+            )
+        except AirflowApiError as exc:
+            if exc.status_code not in UNSUPPORTED_FILTER_STATUS_CODES:
+                raise
+
+        task_instances: list[dict] = []
+        for dag_run_id in dag_run_ids:
+            response = self.get_task_instances(dag_id, dag_run_id)
+            for item in response["task_instances"]:
+                if isinstance(item, dict):
+                    task_instances.append({**item, "dag_run_id": dag_run_id})
+                else:
+                    task_instances.append(item)
+        return {"task_instances": task_instances, "total_entries": len(task_instances)}
 
     def get_dag_runs(self, dag_id: str) -> dict:
         return self._get_paginated(
@@ -308,7 +436,7 @@ class AirflowClient:
         )
 
     def collect_task_runs(self, dag_id: str) -> list[TaskRun]:
-        response = self.get_dag_runs(dag_id)
+        response = self._get_recent_successful_dag_runs(dag_id)
         try:
             dag_runs = [
                 AirflowDagRunDTO.model_validate(item) for item in response["dag_runs"]
@@ -339,32 +467,32 @@ class AirflowClient:
             window_start = max(0, target_index - self.history_run_limit + 1)
             selected_dag_runs = successful_dag_runs[window_start : target_index + 1]
 
-        task_runs: list[TaskRun] = []
+        selected_run_ids = [run.dag_run_id for run in selected_dag_runs]
+        if not selected_run_ids:
+            return []
+        response = self._get_successful_task_instances(dag_id, selected_run_ids)
+        try:
+            task_instances = [
+                AirflowTaskInstanceDTO.model_validate(item)
+                for item in response["task_instances"]
+            ]
+        except ValidationError as exc:
+            raise AirflowDataError("task instance") from exc
+        if any(task.dag_run_id is None for task in task_instances):
+            raise AirflowDataError("task instance DAG run identifier")
 
-        for dag_run in selected_dag_runs:
-            response = self.get_task_instances(
+        selected_run_id_set = set(selected_run_ids)
+        return [
+            map_task_instance(
                 dag_id=dag_id,
-                dag_run_id=dag_run.dag_run_id,
+                dag_run_id=task.dag_run_id,
+                task=task,
             )
-            try:
-                task_instances = [
-                    AirflowTaskInstanceDTO.model_validate(item)
-                    for item in response["task_instances"]
-                ]
-            except ValidationError as exc:
-                raise AirflowDataError("task instance") from exc
-
-            task_runs.extend(
-                map_task_instance(
-                    dag_id=dag_id,
-                    dag_run_id=dag_run.dag_run_id,
-                    task=task,
-                )
-                for task in task_instances
-                if task.state == "success"
-            )
-
-        return task_runs
+            for task in task_instances
+            if task.state == "success"
+            and task.dag_run_id is not None
+            and task.dag_run_id in selected_run_id_set
+        ]
 
     def get_dag_tasks(self, dag_id: str) -> dict:
         return self._get_paginated(

@@ -81,6 +81,14 @@ Authentication is supplied through `AirflowAuthProvider`. Built-in providers
 cover Basic Auth, Airflow login-token exchange, static bearer tokens, and custom
 headers without coupling request collection to a deployment's identity system.
 
+Collection is bounded at the Airflow API boundary whenever the configured API
+supports it. Airflow 2 uses the stable batch POST endpoints, while Airflow 3
+uses filtered collection endpoints for successful DAG runs and task instances.
+Unsupported filter or batch responses fall back to the paginated per-run API,
+preserving compatibility with older Airflow 2 deployments. This optimization
+belongs exclusively to the infrastructure adapter and does not leak transport
+capabilities into application or domain contracts.
+
 ### Delivery adapters
 
 `flowsense.cli`, `flowsense.mcp`, and `flowsense.observability` translate user input into an
