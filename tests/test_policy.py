@@ -6,34 +6,35 @@ from flowsense.engine.history import build_duration_history
 
 
 def test_policy_validates_history_and_thresholds() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="minimum_history"):
         AnalysisPolicy(minimum_history=1)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Severity thresholds"):
         AnalysisPolicy(
             medium_threshold=3.5,
             high_threshold=2.0,
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="baseline_window"):
         AnalysisPolicy(minimum_history=5, baseline_window=3)
 
 
 @pytest.mark.parametrize(
-    "overrides",
+    ("overrides", "message"),
     [
-        {"change_point_minimum_segment_size": 1},
-        {"change_point_score_threshold": 0.0},
-        {"trend_minimum_observations": 2},
-        {"trend_score_threshold": 0.0},
-        {"trend_minimum_directional_consistency": 0.0},
-        {"trend_minimum_directional_consistency": 1.1},
+        ({"change_point_minimum_segment_size": 1}, "minimum_segment_size"),
+        ({"change_point_score_threshold": 0.0}, "score_threshold"),
+        ({"trend_minimum_observations": 2}, "minimum_observations"),
+        ({"trend_score_threshold": 0.0}, "score_threshold"),
+        ({"trend_minimum_directional_consistency": 0.0}, "directional_consistency"),
+        ({"trend_minimum_directional_consistency": 1.1}, "directional_consistency"),
     ],
 )
 def test_policy_validates_structural_analysis_settings(
     overrides: dict[str, int | float],
+    message: str,
 ) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=message):
         AnalysisPolicy(**overrides)
 
 

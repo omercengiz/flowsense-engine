@@ -3,8 +3,6 @@ import sys
 from unittest.mock import patch
 
 import pytest
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
 
 from flowsense import (
     ANALYSIS_SCHEMA_VERSION,
@@ -17,7 +15,15 @@ from flowsense import (
     TaskImpact,
     TrendResult,
 )
-from flowsense.mcp.server import analyze_airflow_dag, serialize_analysis
+
+mcp = pytest.importorskip("mcp")
+mcp_stdio = pytest.importorskip("mcp.client.stdio")
+server = pytest.importorskip("flowsense.mcp.server")
+ClientSession = mcp.ClientSession
+StdioServerParameters = mcp.StdioServerParameters
+stdio_client = mcp_stdio.stdio_client
+analyze_airflow_dag = server.analyze_airflow_dag
+serialize_analysis = server.serialize_analysis
 
 
 @pytest.fixture

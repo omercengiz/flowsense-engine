@@ -45,7 +45,7 @@ def test_severity_threshold_comparison_uses_domain_ordering() -> None:
 
 @pytest.mark.parametrize("duration", [-1.0, float("nan"), float("inf"), -float("inf")])
 def test_task_run_rejects_invalid_duration(duration: float) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="duration must be finite and non-negative"):
         TaskRun(
             dag_id="demo",
             dag_run_id="run_1",
