@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 
 from flowsense.domain.enums import (
     ChangeDirection,
+    DriftDirection,
     ImpactClassification,
     Severity,
     TrendDirection,
@@ -20,6 +21,8 @@ class DriftResult:
     robust_z_score: float
     deviation_percent: float
     severity: Severity
+    direction: DriftDirection = DriftDirection.UNCHANGED
+    effective_mad: float = 0.0
 
 
 @dataclass(frozen=True)

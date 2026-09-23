@@ -32,12 +32,22 @@ All notable changes to FlowSense are documented in this file. The project uses
 - Reduced Airflow collection overhead with bounded server-side DAG run filters
   and batched task-instance retrieval, including compatibility fallbacks for
   deployments that do not support the optimized endpoints.
+- Added explicit drift direction and effective MAD fields to analysis results,
+  plus configurable relative and absolute dispersion floors.
 
 ### Changed
 
 - Airflow login tokens are now refreshed once after an unauthorized API
   response, while static bearer, Basic, and custom authentication lifecycles
   remain application-owned.
+- Advanced the analysis output schema to version `1.2` for the new drift and
+  policy fields.
+
+### Fixed
+
+- Constant and near-constant baselines no longer classify negligible timing
+  noise as an automatic critical anomaly when raw MAD is zero or extremely
+  small.
 
 ## [0.4.0] - 2026-09-20
 

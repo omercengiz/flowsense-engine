@@ -11,6 +11,8 @@ class AnalysisPolicy:
     medium_threshold: float = 2.0
     high_threshold: float = 3.5
     critical_threshold: float = 5.0
+    minimum_relative_dispersion: float = 0.01
+    minimum_absolute_dispersion: float = 0.001
     mapped_task_aggregation: MappedTaskAggregation = MappedTaskAggregation.MAX
     change_point_detection_enabled: bool = True
     change_point_minimum_segment_size: int = 3
@@ -36,6 +38,10 @@ class AnalysisPolicy:
             raise ConfigurationError(
                 "Severity thresholds must be positive and increasing."
             )
+        if self.minimum_relative_dispersion <= 0:
+            raise ConfigurationError("minimum_relative_dispersion must be positive.")
+        if self.minimum_absolute_dispersion <= 0:
+            raise ConfigurationError("minimum_absolute_dispersion must be positive.")
         if self.change_point_minimum_segment_size < 2:
             raise ConfigurationError(
                 "change_point_minimum_segment_size must be at least 2."

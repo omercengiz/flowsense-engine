@@ -74,3 +74,9 @@ def test_analysis_json_schema_describes_version_and_severity() -> None:
         "HIGH",
         "CRITICAL",
     ]
+    assert schema["$defs"]["DriftDirection"]["enum"] == [
+        "INCREASE",
+        "DECREASE",
+        "UNCHANGED",
+    ]
+    assert "effective_mad" in schema["$defs"]["DriftOutput"]["properties"]
