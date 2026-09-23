@@ -1,5 +1,6 @@
 from flowsense.domain.enums import (
     ChangeDirection,
+    DriftDirection,
     ImpactClassification,
     MappedTaskAggregation,
     Severity,
@@ -37,6 +38,7 @@ __all__ = [
     "DAGAnalysis",
     "DAGAnalysisSummary",
     "DriftResult",
+    "DriftDirection",
     "FlowSenseError",
     "ImpactClassification",
     "InsufficientHistoryError",

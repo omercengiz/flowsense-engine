@@ -107,6 +107,8 @@ For repeatable analysis across environments, create `flowsense-policy.json`:
   "medium_threshold": 2.0,
   "high_threshold": 3.5,
   "critical_threshold": 5.0,
+  "minimum_relative_dispersion": 0.01,
+  "minimum_absolute_dispersion": 0.001,
   "mapped_task_aggregation": "MAX"
 }
 ```

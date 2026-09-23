@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import math
-
 import numpy as np
 
 from flowsense.domain import (
     DEFAULT_ANALYSIS_POLICY,
     AnalysisPolicy,
+    DriftDirection,
     DriftResult,
     InsufficientHistoryError,
     Severity,
@@ -45,16 +44,19 @@ def calculate_drift(
 
     mad = float(np.median(absolute_deviations))
 
-    if mad == 0:
-        if math.isclose(current, median):
-            robust_z_score = 0.0
-        else:
-            robust_z_score = math.copysign(
-                policy.critical_threshold,
-                current - median,
-            )
+    effective_mad = max(
+        mad,
+        abs(median) * policy.minimum_relative_dispersion,
+        policy.minimum_absolute_dispersion,
+    )
+    robust_z_score = 0.6745 * (current - median) / effective_mad
+
+    if current > median:
+        direction = DriftDirection.INCREASE
+    elif current < median:
+        direction = DriftDirection.DECREASE
     else:
-        robust_z_score = 0.6745 * (current - median) / mad
+        direction = DriftDirection.UNCHANGED
 
     deviation_percent = 0.0 if median == 0 else (current - median) / median * 100
 
@@ -77,4 +79,6 @@ def calculate_drift(
         robust_z_score=robust_z_score,
         deviation_percent=deviation_percent,
         severity=severity,
+        direction=direction,
+        effective_mad=effective_mad,
     )

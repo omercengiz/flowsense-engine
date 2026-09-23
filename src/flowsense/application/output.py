@@ -4,13 +4,14 @@ from pydantic import BaseModel, ConfigDict
 
 from flowsense.domain import (
     ChangeDirection,
+    DriftDirection,
     ImpactClassification,
     MappedTaskAggregation,
     Severity,
     TrendDirection,
 )
 
-ANALYSIS_SCHEMA_VERSION = "1.1"
+ANALYSIS_SCHEMA_VERSION = "1.2"
 BATCH_ANALYSIS_SCHEMA_VERSION = "1.0"
 
 
@@ -42,6 +43,8 @@ class AnalysisPolicyOutput(OutputModel):
     medium_threshold: float
     high_threshold: float
     critical_threshold: float
+    minimum_relative_dispersion: float
+    minimum_absolute_dispersion: float
     mapped_task_aggregation: MappedTaskAggregation
     change_point_detection_enabled: bool
     change_point_minimum_segment_size: int
@@ -63,9 +66,11 @@ class DriftOutput(OutputModel):
     baseline: float
     current: float
     mad: float
+    effective_mad: float
     robust_z_score: float
     deviation_percent: float
     severity: Severity
+    direction: DriftDirection
 
 
 class ChangePointOutput(OutputModel):
@@ -109,7 +114,7 @@ class DiagnosticOutput(OutputModel):
 class AnalysisDocument(OutputModel):
     """Typed representation of the FlowSense analysis output schema."""
 
-    schema_version: Literal["1.1"] = ANALYSIS_SCHEMA_VERSION
+    schema_version: Literal["1.2"] = ANALYSIS_SCHEMA_VERSION
     dag_id: str
     current_dag_run_id: str | None
     runs_analyzed: int

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from flowsense import TaskRun, analyze_dag, serialize_analysis
 
-GOLDEN_FILE = Path(__file__).parent / "fixtures" / "golden" / "analysis_v1_1.json"
+GOLDEN_FILE = Path(__file__).parent / "fixtures" / "golden" / "analysis_v1_2.json"
 
 
 class GoldenDAGDataSource:

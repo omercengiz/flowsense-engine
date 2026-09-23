@@ -23,9 +23,11 @@ def _drift_output(result: DriftResult) -> DriftOutput:
         baseline=result.baseline,
         current=result.current,
         mad=result.mad,
+        effective_mad=result.effective_mad,
         robust_z_score=result.robust_z_score,
         deviation_percent=result.deviation_percent,
         severity=result.severity,
+        direction=result.direction,
     )
 
 
@@ -59,6 +61,8 @@ def build_analysis_document(analysis: DAGAnalysis) -> AnalysisDocument:
             medium_threshold=analysis.policy.medium_threshold,
             high_threshold=analysis.policy.high_threshold,
             critical_threshold=analysis.policy.critical_threshold,
+            minimum_relative_dispersion=(analysis.policy.minimum_relative_dispersion),
+            minimum_absolute_dispersion=(analysis.policy.minimum_absolute_dispersion),
             mapped_task_aggregation=analysis.policy.mapped_task_aggregation,
             change_point_detection_enabled=(
                 analysis.policy.change_point_detection_enabled

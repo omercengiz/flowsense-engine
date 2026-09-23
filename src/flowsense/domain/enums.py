@@ -26,6 +26,12 @@ class ChangeDirection(StrEnum):
     DECREASE = "DECREASE"
 
 
+class DriftDirection(StrEnum):
+    INCREASE = "INCREASE"
+    DECREASE = "DECREASE"
+    UNCHANGED = "UNCHANGED"
+
+
 class TrendDirection(StrEnum):
     INCREASING = "INCREASING"
     DECREASING = "DECREASING"
