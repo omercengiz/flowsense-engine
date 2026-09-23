@@ -15,12 +15,15 @@ def _client(
     retry_backoff: float = 0.25,
     connect_timeout: float = 3.0,
     read_timeout: float = 7.0,
+    auth_mode: str = "token",
 ) -> AirflowClient:
     client = AirflowClient(
         config=AirflowConfig(
             base_url="http://airflow.test",
             username="airflow",
             password="airflow",
+            auth_mode=auth_mode,
+            bearer_token="static-token" if auth_mode == "bearer" else None,
             max_retries=max_retries,
             retry_backoff=retry_backoff,
             connect_timeout=connect_timeout,
@@ -105,7 +108,7 @@ def test_does_not_retry_permanent_client_error() -> None:
     http_client = MagicMock(spec=httpx.Client)
     sleep = MagicMock()
     http_client.request.return_value = _response(401)
-    client = _client(http_client, sleep)
+    client = _client(http_client, sleep, auth_mode="bearer")
 
     with pytest.raises(AirflowApiError) as exc_info:
         client.get_dag_runs("demo")
