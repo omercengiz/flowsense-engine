@@ -28,6 +28,7 @@ class AirflowDagDTO(AirflowDTO):
 
 class AirflowTaskInstanceDTO(AirflowDTO):
     task_id: str
+    dag_run_id: str | None = None
     state: str | None = None
     start_date: datetime | None = None
     end_date: datetime | None = None
