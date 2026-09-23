@@ -11,11 +11,11 @@ FlowSense requires Python 3.12 or 3.13.
 ```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
-python -m pip install "flowsense-engine==0.4.0"
+python -m pip install "flowsense-engine==0.5.0"
 flowsense --version
 ```
 
-The expected version is `0.4.0`. Pin the version in production dependency files
+The expected version is `0.5.0`. Pin the version in production dependency files
 and upgrade deliberately after reviewing the changelog.
 
 ## 2. Configure Airflow access
