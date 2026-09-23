@@ -56,10 +56,7 @@ def calculate_drift(
     else:
         robust_z_score = 0.6745 * (current - median) / mad
 
-    if median == 0:
-        deviation_percent = 0.0
-    else:
-        deviation_percent = (current - median) / median * 100
+    deviation_percent = 0.0 if median == 0 else (current - median) / median * 100
 
     absolute_z = abs(robust_z_score)
 

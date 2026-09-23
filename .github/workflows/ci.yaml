@@ -41,7 +41,12 @@ jobs:
         run: uv run pyright
 
       - name: Run unit tests
-        run: uv run python -m pytest -m "not integration" -v
+        run: >-
+          uv run python -m pytest -m "not integration" -v
+          --cov=flowsense
+          --cov-report=term-missing
+          --cov-report=xml
+          --cov-fail-under=90
 
       - name: Build package
         run: uv run python -m build

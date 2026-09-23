@@ -47,7 +47,7 @@ def test_header_provider_copies_validated_headers() -> None:
     ],
 )
 def test_header_provider_rejects_unsafe_headers(headers: dict[str, str]) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="authentication header"):
         HeaderAuthProvider(headers)
 
 

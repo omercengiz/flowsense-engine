@@ -2,8 +2,12 @@ import os
 import sys
 
 import pytest
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+
+mcp = pytest.importorskip("mcp")
+mcp_stdio = pytest.importorskip("mcp.client.stdio")
+ClientSession = mcp.ClientSession
+StdioServerParameters = mcp.StdioServerParameters
+stdio_client = mcp_stdio.stdio_client
 
 
 @pytest.fixture

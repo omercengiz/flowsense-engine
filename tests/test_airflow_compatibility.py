@@ -267,7 +267,7 @@ def test_accepts_airflow_2_and_3_task_instance_payloads(
 
 @pytest.mark.parametrize("duration", [-1.0, float("nan"), float("inf")])
 def test_rejects_invalid_airflow_task_duration(duration: float) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="duration"):
         AirflowTaskInstanceDTO.model_validate(
             {
                 "task_id": "transform",
