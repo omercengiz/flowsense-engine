@@ -35,6 +35,8 @@ def test_airflow_rest_contract_supports_complete_analysis() -> None:
         requests.append(request)
         if request.url.path == "/auth/token":
             return httpx.Response(200, json={"access_token": "contract-token"})
+        if "/~/" in request.url.path or request.url.path.endswith("/dagRuns/list"):
+            return httpx.Response(404)
         if request.url.path.endswith("/dagRuns"):
             return httpx.Response(200, json=_load_fixture(api_version, "dag_runs"))
         if request.url.path.endswith("/taskInstances"):
