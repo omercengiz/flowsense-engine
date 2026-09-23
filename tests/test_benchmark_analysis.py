@@ -37,7 +37,7 @@ def test_synthetic_benchmark_dag_is_deterministic_and_ordered() -> None:
 def test_benchmark_scenario_rejects_invalid_sizes(
     overrides: dict[str, int],
 ) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="must be"):
         BenchmarkScenario(**overrides)
 
 

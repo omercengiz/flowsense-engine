@@ -27,6 +27,8 @@ All notable changes to FlowSense are documented in this file. The project uses
   command and propagated the selected policy through every collection cycle.
 - Added a validated per-cycle history limit to the Prometheus metrics command
   so Airflow collection remains explicitly bounded.
+- Added expanded Ruff quality rules, a 90% CI coverage gate, and graceful MCP
+  test skipping when the optional dependency is not installed.
 
 ## [0.4.0] - 2026-09-20
 
