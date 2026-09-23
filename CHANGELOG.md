@@ -33,6 +33,12 @@ All notable changes to FlowSense are documented in this file. The project uses
   and batched task-instance retrieval, including compatibility fallbacks for
   deployments that do not support the optimized endpoints.
 
+### Changed
+
+- Airflow login tokens are now refreshed once after an unauthorized API
+  response, while static bearer, Basic, and custom authentication lifecycles
+  remain application-owned.
+
 ## [0.4.0] - 2026-09-20
 
 ### Added
