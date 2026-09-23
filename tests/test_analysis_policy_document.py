@@ -29,3 +29,5 @@ def test_analysis_policy_schema_describes_version_and_options() -> None:
     assert schema["properties"]["schema_version"]["const"] == "1.0"
     assert "minimum_history" in schema["properties"]
     assert "mapped_task_aggregation" in schema["properties"]
+    assert "minimum_relative_dispersion" in schema["properties"]
+    assert "minimum_absolute_dispersion" in schema["properties"]

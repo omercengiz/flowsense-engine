@@ -18,6 +18,8 @@ class AnalysisPolicyDocument(BaseModel):
     medium_threshold: float = 2.0
     high_threshold: float = 3.5
     critical_threshold: float = 5.0
+    minimum_relative_dispersion: float = 0.01
+    minimum_absolute_dispersion: float = 0.001
     mapped_task_aggregation: MappedTaskAggregation = MappedTaskAggregation.MAX
     change_point_detection: bool = True
     change_point_minimum_segment_size: int = 3

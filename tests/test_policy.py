@@ -18,6 +18,12 @@ def test_policy_validates_history_and_thresholds() -> None:
     with pytest.raises(ValueError, match="baseline_window"):
         AnalysisPolicy(minimum_history=5, baseline_window=3)
 
+    with pytest.raises(ValueError, match="minimum_relative_dispersion"):
+        AnalysisPolicy(minimum_relative_dispersion=0.0)
+
+    with pytest.raises(ValueError, match="minimum_absolute_dispersion"):
+        AnalysisPolicy(minimum_absolute_dispersion=0.0)
+
 
 @pytest.mark.parametrize(
     ("overrides", "message"),
@@ -65,6 +71,22 @@ def test_drift_uses_recent_baseline_window() -> None:
     )
 
     assert result.baseline == pytest.approx(2.1)
+    assert result.severity == "NORMAL"
+
+
+def test_drift_uses_configured_dispersion_floor() -> None:
+    policy = AnalysisPolicy(
+        minimum_relative_dispersion=0.1,
+        minimum_absolute_dispersion=0.5,
+    )
+
+    result = calculate_drift(
+        "transform",
+        [3.0, 3.0, 3.0, 3.0, 3.5],
+        policy=policy,
+    )
+
+    assert result.effective_mad == pytest.approx(0.5)
     assert result.severity == "NORMAL"
 
 

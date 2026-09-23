@@ -136,6 +136,8 @@ def test_serialize_analysis() -> None:
                 robust_z_score=43.84,
                 deviation_percent=216.67,
                 severity="CRITICAL",
+                direction="INCREASE",
+                effective_mad=0.1,
             )
         },
         handoff_drift_results={
@@ -147,6 +149,8 @@ def test_serialize_analysis() -> None:
                 robust_z_score=20.24,
                 deviation_percent=300.0,
                 severity="CRITICAL",
+                direction="INCREASE",
+                effective_mad=0.2,
             )
         },
         task_impacts={
@@ -228,6 +232,8 @@ def test_serialize_analysis() -> None:
         "medium_threshold": 2.0,
         "high_threshold": 3.5,
         "critical_threshold": 5.0,
+        "minimum_relative_dispersion": 0.01,
+        "minimum_absolute_dispersion": 0.001,
         "mapped_task_aggregation": "MAX",
         "change_point_detection_enabled": True,
         "change_point_minimum_segment_size": 3,
@@ -264,6 +270,8 @@ def test_serialize_analysis() -> None:
     assert transform["baseline"] == 3.0
     assert transform["current"] == 9.5
     assert transform["mad"] == 0.1
+    assert transform["effective_mad"] == 0.1
+    assert transform["direction"] == "INCREASE"
     assert transform["robust_z_score"] == 43.84
     assert transform["deviation_percent"] == 216.67
     assert transform["severity"] == "CRITICAL"

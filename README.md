@@ -256,6 +256,8 @@ flowsense analyze <dag_id> --dag-run-id <dag_run_id>
 
 The MCP tool exposes the same option as `dag_run_id`. Analysis output includes
 `current_dag_run_id`; this field was introduced in output schema version `1.1`.
+Output schema version `1.2` adds drift `direction`, the regularized
+`effective_mad`, and the dispersion-floor policy values.
 
 The JSON document and MCP tool response share the same serialization contract
 and include a `schema_version` field. The serializer is also available from the
@@ -328,6 +330,8 @@ policy = AnalysisPolicy(
     medium_threshold=2.5,
     high_threshold=4.0,
     critical_threshold=6.0,
+    minimum_relative_dispersion=0.01,
+    minimum_absolute_dispersion=0.001,
     mapped_task_aggregation=MappedTaskAggregation.MAX,
     change_point_minimum_segment_size=4,
     change_point_score_threshold=4.0,
@@ -340,6 +344,8 @@ policy = AnalysisPolicy(
 `baseline_window` limits the number of historical values used before the current
 run. Mapped task durations can be aggregated with `MAX`, `MEAN`, or `SUM`. The
 same policy options are available through the CLI and MCP tool.
+The dispersion floors prevent constant or nearly constant baselines from
+turning negligible timing noise into an automatic critical anomaly.
 Change-point and trend detection can also be disabled independently with
 `change_point_detection_enabled=False` or `trend_detection_enabled=False`.
 

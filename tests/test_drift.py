@@ -1,6 +1,6 @@
 import pytest
 
-from flowsense.domain import InsufficientHistoryError
+from flowsense.domain import DriftDirection, InsufficientHistoryError
 from flowsense.engine.drift import calculate_drift
 
 
@@ -51,8 +51,43 @@ def test_calculate_drift_detects_change_when_mad_is_zero() -> None:
     )
 
     assert result.mad == 0.0
-    assert result.robust_z_score == 5.0
+    assert result.effective_mad == pytest.approx(0.03)
+    assert result.robust_z_score > 5.0
     assert result.severity == "CRITICAL"
+    assert result.direction is DriftDirection.INCREASE
+
+
+def test_calculate_drift_regularizes_small_change_when_mad_is_zero() -> None:
+    result = calculate_drift(
+        "transform",
+        [3.0, 3.0, 3.0, 3.0, 3.001],
+    )
+
+    assert result.mad == 0.0
+    assert result.effective_mad == pytest.approx(0.03)
+    assert result.robust_z_score == pytest.approx(0.0224833333)
+    assert result.severity == "NORMAL"
+    assert result.direction is DriftDirection.INCREASE
+
+
+def test_calculate_drift_uses_absolute_floor_for_zero_baseline() -> None:
+    result = calculate_drift(
+        "transform",
+        [0.0, 0.0, 0.0, 0.0, 0.0001],
+    )
+
+    assert result.effective_mad == pytest.approx(0.001)
+    assert result.severity == "NORMAL"
+
+
+def test_calculate_drift_reports_decrease_direction() -> None:
+    result = calculate_drift(
+        "transform",
+        [10.0, 10.0, 10.0, 10.0, 8.0],
+    )
+
+    assert result.direction is DriftDirection.DECREASE
+    assert result.robust_z_score < 0
 
 
 def test_calculate_drift_remains_normal_when_mad_and_change_are_zero() -> None:
@@ -64,6 +99,7 @@ def test_calculate_drift_remains_normal_when_mad_and_change_are_zero() -> None:
     assert result.mad == 0.0
     assert result.robust_z_score == 0.0
     assert result.severity == "NORMAL"
+    assert result.direction is DriftDirection.UNCHANGED
 
 
 def test_calculate_drift_requires_minimum_history() -> None:
