@@ -321,7 +321,7 @@ def test_airflow_3_filters_and_bounds_recent_successful_dag_runs(
     client._get_recent_successful_dag_runs("demo")
 
     assert http_client.request.call_args.kwargs["params"] == {
-        "states": ["success"],
+        "state": ["success"],
         "order_by": "-run_after",
         "limit": 25,
         "offset": 0,
@@ -360,7 +360,7 @@ def test_filtered_dag_run_query_falls_back_when_unsupported() -> None:
 
     def handler(request: httpx.Request) -> httpx.Response:
         requests.append(request)
-        if request.url.params.get("states"):
+        if request.url.params.get("state"):
             return httpx.Response(422, request=request)
         return httpx.Response(
             200,
@@ -381,7 +381,7 @@ def test_filtered_dag_run_query_falls_back_when_unsupported() -> None:
         client._get_recent_successful_dag_runs("demo")
 
     assert len(requests) == 2
-    assert requests[1].url.params.get("states") is None
+    assert requests[1].url.params.get("state") is None
 
 
 def test_airflow_3_batches_successful_task_instances(
@@ -398,7 +398,7 @@ def test_airflow_3_batches_successful_task_instances(
     assert request["url"].endswith("/dags/demo/dagRuns/~/taskInstances")
     assert request["params"] == {
         "dag_run_ids": ["run_1", "run_2"],
-        "states": ["success"],
+        "state": ["success"],
         "limit": PAGE_SIZE,
         "offset": 0,
     }
@@ -467,3 +467,34 @@ def test_batch_task_instances_fall_back_to_per_run_requests() -> None:
         "run_2",
     ]
     assert len(requests) == 3
+
+
+def test_airflow_3_running_run_does_not_shrink_successful_history() -> None:
+    completed = [
+        {"dag_run_id": f"success_{index}", "state": "success"} for index in range(20)
+    ]
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        # Airflow ignores unknown query keys: `states` would silently include
+        # the running run in the bounded page, dropping one successful run.
+        rows = (
+            completed
+            if request.url.params.get("state") == "success"
+            else [{"dag_run_id": "active", "state": "running"}, *completed]
+        )
+        limit = int(request.url.params["limit"])
+        return httpx.Response(
+            200, json={"dag_runs": rows[:limit], "total_entries": len(rows)}
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as transport:
+        client = AirflowClient(
+            AirflowConfig(
+                base_url="http://airflow.test", auth_mode="bearer", bearer_token="token"
+            ),
+            history_run_limit=20,
+            http_client=transport,
+        )
+        runs = client._get_recent_successful_dag_runs("demo")["dag_runs"]
+    assert len(runs) == 20
+    assert all(run["state"] == "success" for run in runs)
