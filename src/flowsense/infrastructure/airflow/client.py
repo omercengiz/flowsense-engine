@@ -381,7 +381,7 @@ class AirflowClient:
             return self._get_paginated(
                 self._api_url(f"/dags/{dag_id}/dagRuns"),
                 "dag_runs",
-                params={"states": ["success"], "order_by": "-run_after"},
+                params={"state": ["success"], "order_by": "-run_after"},
                 item_limit=self.history_run_limit,
             )
         except AirflowApiError as exc:
@@ -408,7 +408,7 @@ class AirflowClient:
             return self._get_paginated(
                 self._api_url(f"/dags/{dag_id}/dagRuns/~/taskInstances"),
                 "task_instances",
-                params={"dag_run_ids": dag_run_ids, "states": ["success"]},
+                params={"dag_run_ids": dag_run_ids, "state": ["success"]},
             )
         except AirflowApiError as exc:
             if exc.status_code not in UNSUPPORTED_FILTER_STATUS_CODES:
