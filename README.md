@@ -1,7 +1,7 @@
 # FlowSense Engine
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/omercengiz/flowsense-engine/master/assets/branding/flowsense-engine-logo-v2.png" alt="FlowSense Engine logo" width="640">
+  <img src="https://raw.githubusercontent.com/omercengiz/flowsense-engine/27f7db5e55bfefbba6e355c53c7c84ff34e6f37b/assets/branding/flowsense-engine-logo-v2.png" alt="FlowSense Engine logo" width="640">
 </p>
 
 Temporal drift, anomaly detection, and dependency-aware propagation analysis for Apache Airflow.
