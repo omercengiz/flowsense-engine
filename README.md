@@ -1,8 +1,12 @@
 # FlowSense Engine
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/omercengiz/flowsense-engine/master/assets/branding/flowsense-engine-logo-v2.png" alt="FlowSense Engine logo" width="640">
+</p>
+
 Temporal drift, anomaly detection, and dependency-aware propagation analysis for Apache Airflow.
 
-Current package release: `0.5.0`. See [CHANGELOG.md](CHANGELOG.md) for release
+Current package release: `0.5.1`. See [CHANGELOG.md](CHANGELOG.md) for release
 notes, [docs/architecture.md](docs/architecture.md) for the system architecture,
 [docs/benchmarks.md](docs/benchmarks.md) for performance measurement, and
 [docs/production-quickstart.md](docs/production-quickstart.md) for a production

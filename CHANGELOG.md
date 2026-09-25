@@ -11,6 +11,26 @@ All notable changes to FlowSense are documented in this file. The project uses
 
 ### Fixed
 
+## [0.5.1] - 2026-09-25
+
+### Added
+
+- Six controlled Airflow demo DAGs, each with 20 seeded runs, bounded live
+  execution waves, and a read-only execution-evidence verifier.
+- Dedicated multi-DAG showcase dashboard with per-pipeline results and separate
+  queued/running activity metrics.
+- FlowSense Engine wordmark in the README and PyPI package description.
+
+### Changed
+
+- Overview dashboard now uses instant summary queries, clearer multi-DAG labels,
+  and a shorter default history window.
+
+### Fixed
+
+- Corrected Airflow 3 GET state filters from `states` to `state`, preventing
+  running runs from shrinking the bounded successful-run analysis window.
+
 ## [0.5.0] - 2026-09-23
 
 ### Added
